@@ -1,0 +1,429 @@
+# .claude/commands/qa-bot
+
+This command creates a flexible QA bot that coordinates comprehensive code review with full CI/CD integration and architectural validation.
+
+## Usage
+
+```bash
+claude < .claude/commands/qa-bot \
+  --scope <target> \
+  --tools <tool-classes> \
+  --validations <validation-types> \
+  --processes <process-list> \
+  --sources <architecture-sources>
+```
+
+## Core Arguments
+
+### 1. Scope/Object/Target
+Defines what to review:
+- `branch:<name>` - Specific branch
+- `pr:<number>` or `pr:<alias>` - Pull request(s)
+- `evolution:<uuid>` - Evolution instance results
+- `feature:<pattern>` - Feature-specific code
+- `module:<path>` - Specific module/package
+- `commit:<sha>` - Specific commit
+- `diff:<base>..<head>` - Commit range
+- `all` - Entire codebase
+
+### 2. Tool Classes
+Specify which tools to engage:
+- `github-actions` - GitHub Actions workflows
+- `github-checks` - Status checks API
+- `github-pr-api` - PR comments and reviews
+- `local-analysis` - Local code analysis tools
+- `claude-analysis` - Claude-powered review
+- `ci-pipeline` - Full CI/CD pipeline
+- `security-scan` - Security-focused tools
+- `performance-bench` - Performance testing
+
+### 3. Validations
+Required validation types:
+- `evidence-based` - ALWAYS ON (immutable)
+- `compilation` - Code compiles
+- `tests` - All tests pass
+- `coverage` - Coverage thresholds met
+- `performance` - Performance benchmarks
+- `security` - Security scan clean
+- `docs` - Documentation complete
+- `architecture` - Architectural compliance
+
+### 4. Processes
+Workflow processes to involve:
+- `discover` - Discover design intent
+- `analyze` - Deep code analysis
+- `validate` - Run validations
+- `report` - Generate reports
+- `delegate` - Create subtasks
+- `integrate` - CI/CD integration
+- `recommend` - Make recommendations
+- `track` - Track issues/tasks
+
+### 5. Sources (Architecture Discovery)
+- `@docs/*.md` - Local documentation
+- `@.claude/*.md` - Claude context files
+- `@github:issues` - GitHub issues for intent
+- `@github:discussions` - Discussions
+- `@mcp:decisions` - ConPort decisions
+- `@mcp:patterns` - System patterns
+- `@dynamic:analyze` - Dynamic discovery
+- `@evolution:summaries` - Evolution results
+
+## Optional Parameters
+
+### Binary Flags (--flag/--no-flag)
+- `--style-check` (default: on) - Code style verification
+- `--test-coverage` (default: on) - Coverage requirements
+- `--security-scan` (default: on) - Security analysis
+- `--performance-check` (default: off) - Performance validation
+- `--docs-check` (default: off) - Documentation completeness
+- `--line-comments` (default: off) - Inline code comments
+- `--auto-fix` (default: off) - Automated fixes
+
+## Implementation
+
+### Phase 1: Initialize QA Coordinator
+
+```bash
+# Parse arguments and set up context
+qa_init() {
+    local SCOPE=$1
+    local TOOLS=$2
+    local VALIDATIONS=$3
+    local PROCESSES=$4
+    local SOURCES=$5
+    
+    echo "=== QA Bot Initialization ==="
+    echo "Scope: $SCOPE"
+    echo "Tools: $TOOLS"
+    echo "Validations: $VALIDATIONS (+ evidence-based ALWAYS)"
+    echo "Processes: $PROCESSES"
+    echo "Sources: $SOURCES"
+    
+    # Create QA workspace
+    QA_UUID=$(uuidgen | cut -c1-8)
+    mkdir -p .qa-bot/$QA_UUID
+    
+    # Initialize coordinator
+    cat > .qa-bot/$QA_UUID/coordinator.yaml << EOF
+qa_session:
+  id: $QA_UUID
+  started: $(date -Iseconds)
+  scope: $SCOPE
+  tools: $TOOLS
+  validations: $VALIDATIONS
+  processes: $PROCESSES
+  sources: $SOURCES
+  status: initialized
+EOF
+}
+```
+
+### Phase 2: Discover Design Intent
+
+```python
+# discover_intent.py
+import yaml
+import json
+from pathlib import Path
+
+class DesignIntentDiscovery:
+    def __init__(self, sources):
+        self.sources = sources.split(',')
+        self.intent = {}
+        
+    def discover(self):
+        for source in self.sources:
+            if source.startswith('@docs:'):
+                self.discover_from_docs(source[6:])
+            elif source.startswith('@github:'):
+                self.discover_from_github(source[8:])
+            elif source.startswith('@mcp:'):
+                self.discover_from_mcp(source[5:])
+            elif source == '@dynamic:analyze':
+                self.dynamic_analysis()
+                
+    def discover_from_docs(self, pattern):
+        """Extract design intent from documentation"""
+        docs = Path('.').glob(pattern)
+        for doc in docs:
+            content = doc.read_text()
+            # Extract architecture decisions, goals, constraints
+            self.intent['documented_goals'] = self.extract_goals(content)
+            self.intent['constraints'] = self.extract_constraints(content)
+            
+    def discover_from_github(self, source_type):
+        """Query GitHub for design discussions"""
+        if source_type == 'issues':
+            # Use gh CLI to get architectural issues
+            issues = subprocess.run(['gh', 'issue', 'list', '--label', 'architecture'], 
+                                  capture_output=True, text=True)
+            self.intent['github_issues'] = self.parse_issues(issues.stdout)
+            
+    def dynamic_analysis(self):
+        """Analyze codebase to infer design patterns"""
+        # Analyze module structure
+        # Detect architectural patterns
+        # Infer design principles
+        pass
+```
+
+### Phase 3: Coordinate Validation
+
+```elixir
+defmodule QABot.Coordinator do
+  @moduledoc """
+  Central coordinator for QA validation with immutable evidence-based validation
+  """
+  
+  @immutable_validation :evidence_based
+  
+  def coordinate(scope, tools, validations, processes) do
+    # Always include evidence-based validation
+    validations = [@immutable_validation | validations] |> Enum.uniq()
+    
+    # Create validation pipeline
+    pipeline = build_pipeline(scope, tools, validations, processes)
+    
+    # Delegate subtasks
+    subtasks = create_subtasks(pipeline)
+    
+    # Execute with coordination
+    results = execute_coordinated(subtasks)
+    
+    # Generate comprehensive report
+    generate_report(results)
+  end
+  
+  defp create_subtasks(pipeline) do
+    Enum.map(pipeline, fn step ->
+      case step.type do
+        :github_action ->
+          create_github_action_subtask(step)
+        :claude_analysis ->
+          create_claude_subtask(step)
+        :local_validation ->
+          create_local_subtask(step)
+        :ci_pipeline ->
+          create_ci_subtask(step)
+      end
+    end)
+  end
+  
+  defp validate_evidence_based(scope) do
+    # This ALWAYS runs - non-negotiable
+    %{
+      validation: :evidence_based,
+      checks: [
+        verify_claims_have_evidence(scope),
+        verify_no_implementation_illusion(scope),
+        verify_measured_not_assumed(scope),
+        verify_real_world_functionality(scope)
+      ]
+    }
+  end
+end
+```
+
+### Phase 4: GitHub CI/CD Integration
+
+```yaml
+# .github/workflows/qa-bot-integration.yml
+name: QA Bot CI/CD Integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      qa_session_id:
+        description: 'QA Bot Session ID'
+        required: true
+      
+jobs:
+  qa-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Load QA Configuration
+        run: |
+          cat .qa-bot/${{ inputs.qa_session_id }}/coordinator.yaml
+          
+      - name: Run Compilation Check
+        if: contains(fromJson(inputs.validations), 'compilation')
+        run: mix compile --warnings-as-errors
+        
+      - name: Run Tests with Coverage
+        if: contains(fromJson(inputs.validations), 'tests')
+        run: |
+          mix test --cover
+          mix coveralls.github
+          
+      - name: Security Scan
+        if: contains(fromJson(inputs.validations), 'security')
+        uses: github/super-linter@v4
+        
+      - name: Performance Benchmarks
+        if: contains(fromJson(inputs.validations), 'performance')
+        run: mix bench
+        
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: qa-results-${{ inputs.qa_session_id }}
+          path: .qa-bot/${{ inputs.qa_session_id }}/results/
+```
+
+### Phase 5: Generate Reports
+
+```python
+# generate_qa_report.py
+class QAReportGenerator:
+    def __init__(self, session_id):
+        self.session_id = session_id
+        self.results = self.load_results()
+        
+    def generate_comprehensive_report(self):
+        report = {
+            "summary": self.generate_summary(),
+            "evidence_validation": self.validate_evidence_always(),
+            "detailed_results": self.compile_results(),
+            "recommendations": self.generate_recommendations(),
+            "ci_cd_status": self.get_cicd_status(),
+            "architectural_compliance": self.check_architecture()
+        }
+        
+        # Generate markdown report
+        self.write_markdown_report(report)
+        
+        # Generate GitHub PR comment if applicable
+        if self.is_pr_review():
+            self.create_pr_comment(report)
+            
+        # Create GitHub issues for failures
+        if self.should_create_issues():
+            self.create_github_issues(report)
+            
+    def validate_evidence_always(self):
+        """IMMUTABLE: Always validate evidence-based claims"""
+        return {
+            "implementation_illusion_check": self.check_no_illusion(),
+            "claims_with_evidence": self.verify_all_claims(),
+            "measured_improvements": self.verify_measurements(),
+            "real_world_validation": self.verify_functionality()
+        }
+```
+
+## Example Usage
+
+### Review Evolution Instance
+```bash
+claude < .claude/commands/qa-bot \
+  --scope evolution:a1b2c3d4 \
+  --tools "claude-analysis,github-actions,local-analysis" \
+  --validations "tests,coverage,performance,architecture" \
+  --processes "discover,analyze,validate,report,recommend" \
+  --sources "@evolution:summaries,@docs/*.md,@dynamic:analyze" \
+  --performance-check \
+  --docs-check
+```
+
+### Review Pull Request
+```bash
+claude < .claude/commands/qa-bot \
+  --scope pr:42 \
+  --tools "github-pr-api,github-checks,ci-pipeline" \
+  --validations "compilation,tests,security" \
+  --processes "analyze,validate,report,integrate" \
+  --sources "@github:issues,@mcp:decisions" \
+  --line-comments \
+  --auto-fix
+```
+
+### Comprehensive Codebase Review
+```bash
+claude < .claude/commands/qa-bot \
+  --scope all \
+  --tools "claude-analysis,local-analysis,security-scan" \
+  --validations "architecture,docs,coverage" \
+  --processes "discover,analyze,validate,report,track" \
+  --sources "@docs/*.md,@.claude/*.md,@dynamic:analyze" \
+  --no-style-check \
+  --no-test-coverage
+```
+
+## Output Structure
+
+```markdown
+# QA Bot Analysis Report
+Session: qa-bot-a1b2c3d4
+Date: 2024-01-10T15:30:00Z
+
+## Executive Summary
+- Scope: Evolution Instance a1b2c3d4
+- Overall Status: ⚠️ NEEDS ATTENTION
+- Evidence Validation: ✅ PASSED (immutable check)
+- Recommendations: 3 critical, 5 suggested
+
+## Evidence-Based Validation (ALWAYS ON)
+✅ All claims have supporting evidence
+✅ No implementation illusion detected
+⚠️ 2 performance claims need better measurements
+✅ Real-world functionality verified
+
+## Detailed Results
+
+### Architecture Compliance
+Based on discovered intent from:
+- docs/PHILOSOPHY.md: "minimal sufficient systems"
+- .claude/DEVELOPMENT_PROCESS.md: "validation-driven"
+- GitHub Issue #23: "shared abstractions needed"
+
+Score: 78/100
+- ✅ Follows minimal sufficient principle
+- ⚠️ Missing shared abstractions (detected duplication)
+- ✅ Validation-driven approach evident
+
+### Test Coverage
+- Before: 82%
+- After: 79%
+- Threshold: 80%
+- Status: ⚠️ Below threshold
+
+### Performance Validation
+- Claimed: 10% improvement
+- Measured: 7.3% improvement
+- Evidence: benchmark_results.json
+- Status: ⚠️ Claim overstated
+
+## CI/CD Integration
+- GitHub Action Run: #1234 ✅
+- Status Checks: 8/9 passed
+- Security Scan: Clean
+- Documentation: Generated
+
+## Recommendations
+
+### Critical
+1. Increase test coverage to meet 80% threshold
+2. Correct performance improvement claims to match measurements
+3. Extract duplicated validation logic into shared module
+
+### Suggested
+1. Add integration tests for new features
+2. Update documentation with actual metrics
+3. Consider splitting large modules
+4. Add performance regression tests
+5. Implement automated dependency updates
+
+## Subtasks Created
+- [ ] GitHub Issue #456: Increase test coverage
+- [ ] PR Comment: Added review with specific suggestions
+- [ ] CI Pipeline: Triggered follow-up validation
+
+## Next Steps
+1. Address critical recommendations
+2. Re-run QA bot after fixes
+3. Consider architectural refactoring for shared abstractions
+```
+
+This QA bot provides maximum flexibility while maintaining the immutable principle of evidence-based validation.
