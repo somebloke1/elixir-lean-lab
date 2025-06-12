@@ -31,6 +31,12 @@ check_command() {
 install_asdf() {
     echo -e "${YELLOW}📦 Installing asdf version manager...${NC}"
     
+    # Check if asdf directory already exists
+    if [ -d "$HOME/.asdf" ]; then
+        echo -e "${YELLOW}asdf directory already exists. Removing old installation...${NC}"
+        rm -rf "$HOME/.asdf"
+    fi
+    
     # Clone asdf
     git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
     
@@ -39,15 +45,21 @@ install_asdf() {
     
     # For bash
     if [ -f ~/.bashrc ]; then
-        echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
-        echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+        # Check if asdf is already in bashrc
+        if ! grep -q "asdf/asdf.sh" ~/.bashrc; then
+            echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
+            echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+        fi
     fi
     
     # For zsh
     if [ -f ~/.zshrc ]; then
-        echo '. "$HOME/.asdf/asdf.sh"' >> ~/.zshrc
-        echo 'fpath=(${ASDF_DIR}/completions $fpath)' >> ~/.zshrc
-        echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+        # Check if asdf is already in zshrc
+        if ! grep -q "asdf/asdf.sh" ~/.zshrc; then
+            echo '. "$HOME/.asdf/asdf.sh"' >> ~/.zshrc
+            echo 'fpath=(${ASDF_DIR}/completions $fpath)' >> ~/.zshrc
+            echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+        fi
     fi
     
     # Source asdf for current session
@@ -55,19 +67,49 @@ install_asdf() {
     . "$HOME/.asdf/asdf.sh"
     
     echo -e "${GREEN}✅ asdf installed successfully${NC}"
-    echo -e "${YELLOW}   Please restart your shell or run: source ~/.bashrc (or ~/.zshrc)${NC}"
 }
+
+# First, source asdf if it exists but isn't loaded
+if [ -d "$HOME/.asdf" ] && ! command -v asdf &> /dev/null; then
+    export ASDF_DIR="$HOME/.asdf"
+    . "$HOME/.asdf/asdf.sh"
+fi
 
 # Check for asdf
 echo -e "${BLUE}Checking for version management tools...${NC}"
-if ! check_command "asdf"; then
-    echo -e "${YELLOW}asdf is not installed. Would you like to install it? (recommended) [y/N]${NC}"
-    read -r response
-    if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        install_asdf
+if ! command -v asdf &> /dev/null; then
+    # asdf not found in PATH
+    if [ -d "$HOME/.asdf" ]; then
+        echo -e "${YELLOW}asdf is installed but not loaded in your shell.${NC}"
+        echo -e "${YELLOW}Loading asdf for this session...${NC}"
+        export ASDF_DIR="$HOME/.asdf"
+        . "$HOME/.asdf/asdf.sh"
+        
+        # Check if it's in shell config
+        if [ -f ~/.bashrc ] && ! grep -q "asdf/asdf.sh" ~/.bashrc; then
+            echo -e "${YELLOW}Adding asdf to ~/.bashrc...${NC}"
+            echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
+            echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+        fi
+        
+        if [ -f ~/.zshrc ] && ! grep -q "asdf/asdf.sh" ~/.zshrc; then
+            echo -e "${YELLOW}Adding asdf to ~/.zshrc...${NC}"
+            echo '. "$HOME/.asdf/asdf.sh"' >> ~/.zshrc
+            echo 'fpath=(${ASDF_DIR}/completions $fpath)' >> ~/.zshrc
+            echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+        fi
     else
-        echo -e "${YELLOW}⚠️  Skipping asdf installation. You'll need to install Elixir/Erlang manually.${NC}"
+        echo -e "${RED}❌ asdf is not installed${NC}"
+        echo -e "${YELLOW}Would you like to install asdf? (recommended) [y/N]${NC}"
+        read -r response
+        if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            install_asdf
+        else
+            echo -e "${YELLOW}⚠️  Skipping asdf installation. You'll need to install Elixir/Erlang manually.${NC}"
+        fi
     fi
+else
+    echo -e "${GREEN}✅ asdf is installed${NC}"
 fi
 
 # If asdf is available, set up Erlang and Elixir
