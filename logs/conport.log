@@ -75,3 +75,6 @@
 2025-06-12 04:22:55,153 - INFO - __main__ - ConPort FastMCP server lifespan starting.
 2025-06-12 04:22:55,167 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
 2025-06-12 04:22:55,170 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
+2025-06-12 04:39:54,696 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2025-06-12 04:39:54,698 - INFO - context_portal_mcp.db.database - Alembic: Script directory /home/dgk/projects/my_projects/elixir-lean-lab/alembic confirmed to exist by Python.
+2025-06-12 04:39:54,698 - INFO - context_portal_mcp.db.database - Running Alembic migrations for database: /home/dgk/projects/my_projects/elixir-lean-lab/context_portal/context.db
