@@ -68,7 +68,6 @@ Workflow processes to involve:
 - `@mcp:patterns` - System patterns
 - `@dynamic:analyze` - Dynamic discovery
 - `@evolution:summaries` - Evolution results
-- `@discovery-based` - Autonomous discovery of intent through code exploration
 
 ## Optional Parameters
 
@@ -143,8 +142,6 @@ class DesignIntentDiscovery:
                 self.discover_from_mcp(source[5:])
             elif source == '@dynamic:analyze':
                 self.dynamic_analysis()
-            elif source == '@discovery-based':
-                self.discovery_based_analysis()
                 
     def discover_from_docs(self, pattern):
         """Extract design intent from documentation"""
@@ -169,44 +166,6 @@ class DesignIntentDiscovery:
         # Detect architectural patterns
         # Infer design principles
         pass
-        
-    def discovery_based_analysis(self):
-        """Autonomous discovery of intent through code exploration"""
-        self.intent['discovery_based'] = {
-            'module_patterns': self.discover_module_patterns(),
-            'naming_conventions': self.discover_naming_conventions(),
-            'dependency_graph': self.analyze_dependency_structure(),
-            'api_contracts': self.discover_api_contracts(),
-            'test_patterns': self.analyze_test_structure(),
-            'error_handling': self.discover_error_patterns(),
-            'performance_hints': self.discover_performance_intent(),
-            'security_patterns': self.discover_security_intent()
-        }
-        
-    def discover_module_patterns(self):
-        """Discover architectural patterns from module structure"""
-        # Analyze lib/ directory structure
-        # Identify layering (core, domain, interface)
-        # Detect common patterns (Strategy, Factory, etc.)
-        # Infer bounded contexts
-        return {
-            'architecture_style': 'modular_monolith',
-            'patterns_detected': ['strategy', 'factory'],
-            'module_cohesion': 'high',
-            'coupling_analysis': 'low'
-        }
-        
-    def discover_api_contracts(self):
-        """Discover implicit contracts from function signatures"""
-        # Analyze @spec and @type definitions
-        # Infer expected inputs/outputs
-        # Detect error handling patterns
-        # Identify invariants
-        return {
-            'type_safety': 'partial',
-            'error_handling': 'result_tuples',
-            'validation_strategy': 'defensive'
-        }
 ```
 
 ### Phase 3: Coordinate Validation
@@ -363,7 +322,7 @@ claude < .claude/commands/qa-bot \
   --tools "claude-analysis,github-actions,local-analysis" \
   --validations "tests,coverage,performance,architecture" \
   --processes "discover,analyze,validate,report,recommend" \
-  --sources "@evolution:summaries,@docs/*.md,@discovery-based" \
+  --sources "@evolution:summaries,@docs/*.md,@dynamic:analyze" \
   --performance-check \
   --docs-check
 ```
