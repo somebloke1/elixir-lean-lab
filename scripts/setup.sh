@@ -104,10 +104,33 @@ EOF
         if command -v apt-get &> /dev/null; then
             echo -e "${YELLOW}Installing Erlang build dependencies (may require sudo)...${NC}"
             sudo apt-get update
+            
+            # Core build dependencies
             sudo apt-get install -y build-essential autoconf m4 libncurses5-dev \
-                libwxgtk3.0-gtk3-dev libwxgtk-webview3.0-gtk3-dev libgl1-mesa-dev \
-                libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop \
-                libxml2-utils libncurses-dev openjdk-11-jdk
+                libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev \
+                unixodbc-dev xsltproc fop libxml2-utils libncurses-dev
+            
+            # Try to install wxWidgets (package names vary by Debian version)
+            if apt-cache show libwxgtk3.2-dev &> /dev/null; then
+                echo -e "${YELLOW}Installing wxWidgets 3.2...${NC}"
+                sudo apt-get install -y libwxgtk3.2-dev libwxgtk-webview3.2-dev
+            elif apt-cache show libwxgtk3.0-gtk3-dev &> /dev/null; then
+                echo -e "${YELLOW}Installing wxWidgets 3.0...${NC}"
+                sudo apt-get install -y libwxgtk3.0-gtk3-dev libwxgtk-webview3.0-gtk3-dev
+            else
+                echo -e "${YELLOW}⚠️  wxWidgets development packages not found. GUI features may be limited.${NC}"
+            fi
+            
+            # Try to install Java (package names vary)
+            if apt-cache show default-jdk &> /dev/null; then
+                sudo apt-get install -y default-jdk
+            elif apt-cache show openjdk-17-jdk &> /dev/null; then
+                sudo apt-get install -y openjdk-17-jdk
+            elif apt-cache show openjdk-11-jdk &> /dev/null; then
+                sudo apt-get install -y openjdk-11-jdk
+            else
+                echo -e "${YELLOW}⚠️  Java JDK not found. Some Erlang features may be limited.${NC}"
+            fi
         elif command -v brew &> /dev/null; then
             echo -e "${YELLOW}Installing Erlang build dependencies...${NC}"
             brew install autoconf openssl wxwidgets libxslt fop
