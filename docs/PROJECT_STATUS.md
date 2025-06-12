@@ -51,10 +51,15 @@ Elixir Lean Lab is a minimal VM builder for Elixir applications, creating optimi
 ## ALL BUILDERS IMPLEMENTED ✅
 
 ### Complete Builder Suite
-1. **Alpine** ✅ - Docker multi-stage builds (77.5MB, tested working)
-2. **Buildroot** ✅ - Custom Linux systems (15-25MB target)
-3. **Nerves** ✅ - Embedded Elixir platform (18-25MB target)
-4. **Custom** ✅ - Direct kernel compilation (10-20MB target)
+1. **Alpine** ✅ - Docker multi-stage builds (77.5MB actual, 40.3MB compressed - VALIDATED ✓)
+2. **Buildroot** ⚠️ - Custom Linux systems (85-95MB expected - NEEDS VALIDATION)
+3. **Nerves** ⚠️ - Embedded Elixir platform (30-50MB expected - NEEDS VALIDATION)
+4. **Custom** ⚠️ - Direct kernel compilation (15-25MB expected - NEEDS VALIDATION)
+
+### Validation Status
+- **Alpine**: Production ready, fully tested with actual builds
+- **Others**: Code complete but require validation testing
+- **Reality Check**: BEAM needs ~58MB minimum - smaller targets may be unrealistic
 
 ### Future Enhancements
 - Multi-architecture support (ARM64, RISC-V)
@@ -123,22 +128,39 @@ Elixir Lean Lab is a minimal VM builder for Elixir applications, creating optimi
 
 ## Next Steps for Contributors
 
-All core builders are now implemented! Future areas for contribution:
+### PRIORITY: Validation Required! ⚠️
 
-1. **Testing & Verification**
-   - Test Buildroot builder with actual builds
-   - Verify Nerves firmware functionality
-   - Validate Custom kernel builds
+The most critical need is **validating the untested builders**:
 
-2. **Performance Optimization**
-   - Tune kernel configurations for specific use cases
-   - Optimize OTP stripping algorithms
-   - Improve build speed and caching
+1. **Buildroot Validation**
+   - Set up Buildroot toolchain
+   - Run full build test
+   - Measure actual output size
+   - Document any issues
 
-3. **Platform Expansion**
-   - ARM64 and RISC-V architecture support
-   - Cloud provider image formats
-   - Container runtime optimizations
+2. **Nerves Validation**
+   - Install Nerves environment
+   - Test with multiple targets
+   - Verify firmware functionality
+   - Compare with size estimates
+
+3. **Custom Builder Validation**
+   - Test kernel compilation
+   - Verify initramfs creation
+   - Boot test the output
+   - Validate size claims
+
+### After Validation
+
+1. **Performance Optimization**
+   - Tune based on real measurements
+   - Optimize for actual sizes, not theoretical
+   - Improve build speed with caching
+
+2. **Platform Expansion**
+   - ARM64 and RISC-V support
+   - Cloud provider formats
+   - Container runtime integration
 
 ## Repository Structure
 

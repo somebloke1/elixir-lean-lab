@@ -7,16 +7,14 @@ defmodule ElixirLeanLab.Builder.Behavior do
   """
 
   alias ElixirLeanLab.Config
+  alias ElixirLeanLab.Builder.{Utils, Common}
 
   @doc """
   Defines the required callbacks for a VM builder.
   """
   @callback validate_dependencies() :: :ok | {:error, String.t()}
   @callback estimate_size(Config.t()) :: String.t()
-  @callback prepare(Config.t()) :: {:ok, map()} | {:error, String.t()}
-  @callback build(map()) :: {:ok, map()} | {:error, String.t()}
-  @callback package(map(), Config.t()) :: {:ok, String.t()} | {:error, String.t()}
-  @callback cleanup(map()) :: :ok
+  @callback build(Config.t()) :: {:ok, map()} | {:error, String.t()}
 
   @doc """
   Runs the complete build pipeline with proper error handling and cleanup.
@@ -26,6 +24,10 @@ defmodule ElixirLeanLab.Builder.Behavior do
       @behaviour ElixirLeanLab.Builder.Behavior
       
       alias ElixirLeanLab.{Config, Builder}
+      alias ElixirLeanLab.Builder.Utils
+      
+      # Import common utilities
+      import Utils, only: [get_file_size_mb: 1]
       
       def run(config) do
         with :ok <- validate_dependencies(),
@@ -38,7 +40,7 @@ defmodule ElixirLeanLab.Builder.Behavior do
           {:ok, %{
             image: image_path,
             type: builder_type(),
-            size_mb: get_image_size_mb(image_path),
+            size_mb: get_file_size_mb(image_path),
             metadata: Map.get(artifacts, :metadata, %{})
           }}
         else
@@ -51,15 +53,14 @@ defmodule ElixirLeanLab.Builder.Behavior do
       @doc false
       def cleanup(_state), do: :ok
       
+      # Default implementations that can be overridden
       @doc false
-      def get_image_size_mb(path) do
-        case File.stat(path) do
-          {:ok, %{size: size}} -> Float.round(size / 1_048_576, 2)
-          _ -> 0.0
-        end
-      end
+      def validate_dependencies(), do: :ok
       
-      defoverridable cleanup: 1
+      @doc false
+      def estimate_size(%Config{target_size: target}), do: "~#{target}MB"
+      
+      defoverridable [cleanup: 1, validate_dependencies: 0, estimate_size: 1]
       
       # Builder-specific type identifier
       defp builder_type do

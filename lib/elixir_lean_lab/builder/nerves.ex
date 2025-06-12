@@ -10,6 +10,7 @@ defmodule ElixirLeanLab.Builder.Nerves do
   """
 
   alias ElixirLeanLab.{Builder, Config}
+  alias ElixirLeanLab.Builder.{Common, Utils}
 
   @nerves_targets %{
     qemu_arm: "nerves_system_qemu_arm",
@@ -30,14 +31,10 @@ defmodule ElixirLeanLab.Builder.Nerves do
          {:ok, vm_image} <- package_nerves_vm(firmware_path, config) do
       
       Builder.report_size(vm_image)
-      
-      {:ok, %{
-        image: vm_image,
-        type: :nerves,
+      Common.build_result(vm_image, :nerves, %{
         target: target,
-        size_mb: get_image_size_mb(vm_image),
         firmware: firmware_path
-      }}
+      })
     end
   end
 
@@ -300,11 +297,31 @@ defmodule ElixirLeanLab.Builder.Nerves do
     end
   end
 
-  defp get_image_size_mb(path) do
-    case File.stat(path) do
-      {:ok, %{size: size}} -> Float.round(size / 1_048_576, 2)
-      _ -> 0.0
+  @doc """
+  Check for required Nerves tools.
+  """
+  def validate_dependencies do
+    Common.check_dependencies(["mix", "elixir", "erl"])
+  end
+
+  @doc """
+  Estimate the final firmware size.
+  """
+  def estimate_size(%Config{} = config) do
+    target = Map.get(config.vm_options || %{}, :nerves_target, @default_target)
+    base_size = case target do
+      :qemu_arm -> 20
+      :rpi0 -> 25
+      :bbb -> 30
+      :x86_64 -> 35
+      _ -> 30
     end
+    
+    components = [
+      system: base_size,
+      app: if(config.app_path, do: 10, else: 5)
+    ]
+    Common.estimate_size_string(components)
   end
 
   @doc """

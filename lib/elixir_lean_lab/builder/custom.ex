@@ -10,6 +10,7 @@ defmodule ElixirLeanLab.Builder.Custom do
   """
 
   alias ElixirLeanLab.{Builder, Config, KernelConfig, OTPStripper}
+  alias ElixirLeanLab.Builder.{Common, Utils}
 
   @kernel_version "6.6.70"
   @busybox_version "1.36.1"
@@ -22,35 +23,17 @@ defmodule ElixirLeanLab.Builder.Custom do
          {:ok, vm_image} <- package_custom_vm(kernel_path, initramfs_path, config) do
       
       Builder.report_size(vm_image)
-      
-      {:ok, %{
-        image: vm_image,
-        type: :custom,
-        size_mb: get_image_size_mb(vm_image),
+      Common.build_result(vm_image, :custom, %{
         kernel: kernel_path,
         initramfs: initramfs_path
-      }}
+      })
     end
   end
 
   defp build_custom_kernel(build_dir, config) do
-    kernel_dir = Path.join(build_dir, "linux-#{@kernel_version}")
-    kernel_tarball = Path.join(build_dir, "linux-#{@kernel_version}.tar.xz")
-    
-    # Download kernel if not present
-    unless File.exists?(kernel_dir) do
+    Common.with_error_handling do
       url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-#{@kernel_version}.tar.xz"
-      
-      case System.cmd("wget", ["-O", kernel_tarball, url], cd: build_dir) do
-        {_, 0} ->
-          case System.cmd("tar", ["-xf", kernel_tarball], cd: build_dir) do
-            {_, 0} -> :ok
-            {output, _} -> throw({:error, "Failed to extract kernel: #{output}"})
-          end
-        {output, _} ->
-          throw({:error, "Failed to download kernel: #{output}"})
-      end
-    end
+      {:ok, kernel_dir} = Common.download_and_extract(url, "linux", @kernel_version, build_dir)
     
     # Configure kernel
     case configure_custom_kernel(kernel_dir, config) do
@@ -143,23 +126,9 @@ defmodule ElixirLeanLab.Builder.Custom do
   end
 
   defp build_busybox(build_dir, initramfs_dir) do
-    busybox_dir = Path.join(build_dir, "busybox-#{@busybox_version}")
-    busybox_tarball = Path.join(build_dir, "busybox-#{@busybox_version}.tar.bz2")
-    
-    # Download BusyBox if not present
-    unless File.exists?(busybox_dir) do
+    Common.with_error_handling do
       url = "https://busybox.net/downloads/busybox-#{@busybox_version}.tar.bz2"
-      
-      case System.cmd("wget", ["-O", busybox_tarball, url], cd: build_dir) do
-        {_, 0} ->
-          case System.cmd("tar", ["-xf", busybox_tarball], cd: build_dir) do
-            {_, 0} -> :ok
-            {output, _} -> throw({:error, "Failed to extract BusyBox: #{output}"})
-          end
-        {output, _} ->
-          throw({:error, "Failed to download BusyBox: #{output}"})
-      end
-    end
+      {:ok, busybox_dir} = Common.download_and_extract(url, "busybox", @busybox_version, build_dir)
     
     # Configure BusyBox for minimal build
     case System.cmd("make", ["defconfig"], cd: busybox_dir) do
@@ -230,14 +199,7 @@ defmodule ElixirLeanLab.Builder.Custom do
   end
 
   defp generate_strip_commands(config) do
-    otp_opts = [
-      ssh: Map.get(config, :keep_ssh, false),
-      ssl: Map.get(config, :keep_ssl, true),
-      http: Map.get(config, :keep_http, false),
-      mnesia: Map.get(config, :keep_mnesia, false),
-      dev_tools: Map.get(config, :keep_dev_tools, false)
-    ]
-    
+    otp_opts = Common.get_otp_strip_config(config)
     OTPStripper.shell_commands(otp_opts)
   end
 
@@ -340,36 +302,26 @@ defmodule ElixirLeanLab.Builder.Custom do
 
   defp package_custom_vm(kernel_path, initramfs_path, config) do
     vm_name = "custom-vm.tar.xz"
-    vm_path = Path.join(config.output_dir, vm_name)
-    
-    # Create VM package with kernel and initramfs
-    kernel_name = Path.basename(kernel_path)
-    initramfs_name = Path.basename(initramfs_path)
-    build_dir = Path.dirname(kernel_path)
-    
-    case System.cmd("tar", ["-cJf", vm_path, kernel_name, "../#{initramfs_name}"], cd: build_dir) do
-      {_, 0} -> {:ok, vm_path}
-      {output, _} -> {:error, "VM packaging failed: #{output}"}
-    end
+    Common.package_vm([kernel_path, initramfs_path], vm_name, config.output_dir, :xz)
   end
 
-  defp get_image_size_mb(path) do
-    case File.stat(path) do
-      {:ok, %{size: size}} -> Float.round(size / 1_048_576, 2)
-      _ -> 0.0
-    end
+  @doc """
+  Check for required build tools.
+  """
+  def validate_dependencies do
+    Common.check_dependencies(["wget", "tar", "make", "gcc", "docker"])
   end
 
   @doc """
   Estimate final VM size based on configuration.
   """
   def estimate_size(config) do
-    kernel_size = 2  # ~2MB kernel
-    busybox_size = 1  # ~1MB static BusyBox
-    erlang_size = if config.strip_modules, do: 8, else: 15  # 8-15MB BEAM
-    app_size = if config.app_path, do: 3, else: 0  # ~3MB app
-    
-    total = kernel_size + busybox_size + erlang_size + app_size
-    "#{total}-#{total + 5}MB"
+    components = [
+      kernel: 2,
+      busybox: 1,
+      erlang: if(config.strip_modules, do: 8, else: 15),
+      app: if(config.app_path, do: 3, else: 0)
+    ]
+    Common.estimate_size_string(components)
   end
 end

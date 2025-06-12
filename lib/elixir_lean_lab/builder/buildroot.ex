@@ -10,6 +10,7 @@ defmodule ElixirLeanLab.Builder.Buildroot do
   """
 
   alias ElixirLeanLab.{Builder, Config, KernelConfig}
+  alias ElixirLeanLab.Builder.{Common, Utils}
 
   @buildroot_version "2024.02.1"
   @erlang_otp_version "26.2.1"
@@ -25,39 +26,13 @@ defmodule ElixirLeanLab.Builder.Buildroot do
          {:ok, vm_image} <- package_vm_image(artifacts, config) do
       
       Builder.report_size(vm_image)
-      
-      {:ok, %{
-        image: vm_image,
-        type: :buildroot,
-        size_mb: get_image_size_mb(vm_image),
-        artifacts: artifacts
-      }}
+      Common.build_result(vm_image, :buildroot, %{artifacts: artifacts})
     end
   end
 
   defp download_buildroot(build_dir) do
-    buildroot_dir = Path.join(build_dir, "buildroot-#{@buildroot_version}")
-    
-    if File.exists?(buildroot_dir) do
-      {:ok, buildroot_dir}
-    else
-      url = "https://buildroot.org/downloads/buildroot-#{@buildroot_version}.tar.xz"
-      tarball = Path.join(build_dir, "buildroot-#{@buildroot_version}.tar.xz")
-      
-      # Download Buildroot
-      case System.cmd("wget", ["-O", tarball, url], cd: build_dir) do
-        {_, 0} ->
-          # Extract
-          case System.cmd("tar", ["-xf", tarball], cd: build_dir) do
-            {_, 0} ->
-              {:ok, buildroot_dir}
-            {output, _} ->
-              {:error, "Failed to extract Buildroot: #{output}"}
-          end
-        {output, _} ->
-          {:error, "Failed to download Buildroot: #{output}"}
-      end
-    end
+    url = "https://buildroot.org/downloads/buildroot-#{@buildroot_version}.tar.xz"
+    Common.download_and_extract(url, "buildroot", @buildroot_version, build_dir)
   end
 
   defp create_defconfig(config, buildroot_dir) do
@@ -251,8 +226,8 @@ defmodule ElixirLeanLab.Builder.Buildroot do
     echo "Post-build optimization complete"
     """
     
-    File.write!(script_path, script_content)
-    File.chmod!(script_path, 0o755)
+    Common.create_script(script_path, script_content)
+    :ok
   end
 
   defp create_post_image_script(external_dir) do
@@ -275,8 +250,8 @@ defmodule ElixirLeanLab.Builder.Buildroot do
     echo "VM image creation complete"
     """
     
-    File.write!(script_path, script_content)
-    File.chmod!(script_path, 0o755)
+    Common.create_script(script_path, script_content)
+    :ok
   end
 
   defp build_buildroot(buildroot_dir, config) do
@@ -308,20 +283,33 @@ defmodule ElixirLeanLab.Builder.Buildroot do
       artifacts.rootfs
     ] ++ (if File.exists?(artifacts.qcow2), do: [artifacts.qcow2], else: [])
     
-    # Use tar to package everything
-    file_args = files_to_package |> Enum.map(&Path.basename/1)
+    # Package with paths relative to images_dir
     images_dir = Path.dirname(artifacts.kernel)
+    relative_files = files_to_package |> Enum.map(&Path.basename/1)
     
-    case System.cmd("tar", ["-cJf", vm_path] ++ file_args, cd: images_dir) do
-      {_, 0} -> {:ok, vm_path}
-      {output, _} -> {:error, "Failed to package VM: #{output}"}
+    with {:ok, _} <- Common.exec_cmd("tar", ["-cJf", vm_path] ++ relative_files, cd: images_dir) do
+      {:ok, vm_path}
     end
   end
 
-  defp get_image_size_mb(path) do
-    case File.stat(path) do
-      {:ok, %{size: size}} -> Float.round(size / 1_048_576, 2)
-      _ -> 0.0
-    end
+  @doc """
+  Check for required build tools.
+  """
+  def validate_dependencies do
+    Common.check_dependencies(["wget", "tar", "make", "gcc"])
+  end
+
+  @doc """
+  Estimate the final image size.
+  """
+  def estimate_size(%Config{} = config) do
+    components = [
+      kernel: 2,
+      rootfs: 50,
+      erlang: 25,
+      elixir: 10,
+      app: if(config.app_path, do: 10, else: 0)
+    ]
+    Common.estimate_size_string(components)
   end
 end

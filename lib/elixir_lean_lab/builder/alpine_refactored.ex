@@ -1,4 +1,4 @@
-defmodule ElixirLeanLab.Builder.Alpine do
+defmodule ElixirLeanLab.Builder.AlpineRefactored do
   @moduledoc """
   Alpine Linux-based minimal VM builder using Docker multi-stage builds.
   
@@ -7,14 +7,35 @@ defmodule ElixirLeanLab.Builder.Alpine do
   2. Multi-stage Docker builds to minimize final image size
   3. Stripping unnecessary Erlang/OTP modules
   4. Using musl libc for smaller binaries
+  
+  This is the refactored version using the common utilities.
   """
 
-  alias ElixirLeanLab.{Builder, Config, OTPStripper}
-  alias ElixirLeanLab.Builder.{Common, Utils}
+  use ElixirLeanLab.Builder.Behavior
+  
+  alias ElixirLeanLab.{Builder, Config}
+  alias ElixirLeanLab.Builder.{Utils, Common}
 
   @base_packages ~w(libstdc++ openssl ncurses-libs zlib)
   @build_packages ~w(git build-base nodejs npm python3)
 
+  @impl true
+  def validate_dependencies do
+    Common.check_dependencies(["docker"])
+  end
+  
+  @impl true
+  def estimate_size(%Config{strip_modules: strip} = config) do
+    base = 60  # Alpine + Erlang/Elixir
+    stripped = if strip, do: -20, else: 0
+    app = if config.app_path, do: 10, else: 0
+    packages = length(config.packages || []) * 5
+    
+    total = base + stripped + app + packages
+    "#{total}-#{total + 10}MB"
+  end
+  
+  @impl true
   def build(%Config{} = config) do
     with {:ok, build_dir} <- Builder.prepare_build_env(config),
          {:ok, app_dir} <- Builder.prepare_app(config.app_path, build_dir),
@@ -22,13 +43,27 @@ defmodule ElixirLeanLab.Builder.Alpine do
          {:ok, image_name} <- build_docker_image(dockerfile_path, build_dir),
          {:ok, vm_image} <- export_vm_image(image_name, config) do
       
+      Common.report_progress("Alpine VM built successfully")
       Builder.report_size(vm_image)
-      Common.build_result(vm_image, :alpine, %{dockerfile: dockerfile_path})
+      
+      {:ok, Common.build_result(vm_image, :alpine, %{
+        dockerfile: dockerfile_path
+      })}
     end
   end
 
   defp create_dockerfile(config, build_dir) do
-    dockerfile_content = """
+    dockerfile_content = generate_dockerfile(config)
+    dockerfile_path = Path.join(build_dir, "Dockerfile")
+    
+    case Utils.write_file(dockerfile_path, dockerfile_content) do
+      :ok -> {:ok, dockerfile_path}
+      error -> error
+    end
+  end
+  
+  defp generate_dockerfile(config) do
+    """
     # Multi-stage build for minimal Elixir VM
     # Stage 1: Builder
     FROM elixir:1.15-alpine AS builder
@@ -39,7 +74,7 @@ defmodule ElixirLeanLab.Builder.Alpine do
     WORKDIR /app
 
     # Install hex and rebar
-    RUN mix local.hex --force && \
+    RUN mix local.hex --force && \\
         mix local.rebar --force
 
     # Copy application source
@@ -52,10 +87,10 @@ defmodule ElixirLeanLab.Builder.Alpine do
     FROM alpine:3.19 AS runtime
 
     # Install runtime dependencies
-    RUN apk add --no-cache #{Enum.join(@base_packages ++ config.packages, " ")}
+    RUN apk add --no-cache #{Enum.join(@base_packages ++ (config.packages || []), " ")}
 
     # Create non-root user
-    RUN addgroup -g 1000 elixir && \
+    RUN addgroup -g 1000 elixir && \\
         adduser -u 1000 -G elixir -s /bin/sh -D elixir
 
     WORKDIR /app
@@ -70,7 +105,7 @@ defmodule ElixirLeanLab.Builder.Alpine do
     COPY --from=builder /usr/local/bin/iex /usr/local/bin/
     COPY --from=builder /usr/local/bin/mix /usr/local/bin/
 
-    #{if config.strip_modules, do: strip_otp_commands(config), else: ""}
+    #{Common.otp_strip_dockerfile(config)}
 
     # Copy application release if built
     #{if config.app_path, do: "COPY --from=builder /app/_build/prod/rel /app", else: ""}
@@ -85,8 +120,8 @@ defmodule ElixirLeanLab.Builder.Alpine do
 
     # Fix permissions for Elixir installation
     USER root
-    RUN chmod +x /usr/local/bin/* && \
-        chown -R elixir:elixir /usr/local/lib/elixir && \
+    RUN chmod +x /usr/local/bin/* && \\
+        chown -R elixir:elixir /usr/local/lib/elixir && \\
         chown -R elixir:elixir /usr/local/lib/erlang
     USER elixir
 
@@ -96,11 +131,6 @@ defmodule ElixirLeanLab.Builder.Alpine do
     FROM scratch AS export
     COPY --from=runtime / /
     """
-
-    dockerfile_path = Path.join(build_dir, "Dockerfile")
-    File.write!(dockerfile_path, dockerfile_content)
-    
-    {:ok, dockerfile_path}
   end
 
   defp compile_app_commands do
@@ -117,49 +147,20 @@ defmodule ElixirLeanLab.Builder.Alpine do
     """
   end
 
-  defp strip_otp_commands(config \\ %{}) do
-    otp_opts = Common.get_otp_strip_config(config)
-    OTPStripper.dockerfile_commands(otp_opts)
-  end
-
   defp build_docker_image(dockerfile_path, build_dir) do
     image_name = "elixir-lean-vm:#{:os.system_time(:second)}"
     
     case Utils.Docker.build(dockerfile_path, build_dir, image_name) do
       {:ok, _} -> {:ok, image_name}
-      {:error, {_code, output}} -> {:error, "Docker build failed: #{output}"}
+      error -> error
     end
   end
 
   defp export_vm_image(image_name, config) do
     output_path = Path.join(config.output_dir, "alpine-vm.tar")
     
-    # Export the Docker image
-    case Utils.Docker.export(image_name, output_path) do
-      {:ok, _} ->
-        Common.compress_output(output_path, config.compression)
-      
-      {:error, {_code, output}} ->
-        {:error, "Docker export failed: #{output}"}
+    with {:ok, _} <- Utils.Docker.save(image_name, output_path) do
+      Common.compress_and_cleanup(output_path, config.compression)
     end
-  end
-
-  @doc """
-  Check if Docker is available.
-  """
-  def validate_dependencies do
-    Common.check_dependencies(["docker"])
-  end
-
-  @doc """
-  Estimate the final image size.
-  """
-  def estimate_size(%Config{} = config) do
-    components = [
-      base: 10,  # Alpine base
-      erlang: if(config.strip_modules, do: 15, else: 25),
-      app: if(config.app_path, do: 5, else: 0)
-    ]
-    Common.estimate_size_string(components)
   end
 end
