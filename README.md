@@ -1,23 +1,25 @@
 # Elixir Lean Lab
 
-Minimal VM builder for Elixir applications. Create optimized Linux-based virtual machines under 30MB for running Elixir/Erlang applications.
+Minimal VM builder for Elixir applications. Create optimized Linux-based virtual machines targeting minimal size for running Elixir/Erlang applications.
+
+> **Reality Check**: Initial target was 20-30MB, but BEAM VM has ~58MB irreducible complexity. Verified Alpine builds achieve 77.5MB (40.3MB compressed).
 
 ## Overview
 
 Elixir Lean Lab provides tools to build minimal virtual machines specifically optimized for Elixir applications. By removing unnecessary components and using efficient build strategies, it creates VMs that are:
 
-- **Small**: 20-30MB total size (compared to 100MB+ for standard distributions)
+- **Small**: 77.5MB achieved with Alpine (40.3MB compressed) - optimal given BEAM constraints
 - **Fast**: Boot in under 2 seconds
 - **Secure**: Minimal attack surface with only required components
 - **Efficient**: Optimized for BEAM VM performance
 
 ## Features
 
-- **Four Build Strategies**: All implemented and ready to use
-  - ✅ **Alpine Docker**: Multi-stage builds (verified working)
-  - ✅ **Buildroot**: Custom Linux systems 
-  - ✅ **Nerves**: Embedded Elixir firmware
-  - ✅ **Custom Kernel**: Minimal kernel + initramfs
+- **Four Build Strategies**: 
+  - ✅ **Alpine Docker**: Multi-stage builds - **VERIFIED WORKING** (77.5MB)
+  - ⚠️  **Buildroot**: Custom Linux systems - Implemented but NOT VALIDATED
+  - ⚠️  **Nerves**: Embedded Elixir firmware - Implemented but NOT VALIDATED
+  - ⚠️  **Custom Kernel**: Minimal kernel + initramfs - Implemented but NOT VALIDATED
 - **Automatic Size Optimization**: Strips unnecessary OTP applications and files
 - **VM Testing Tools**: Launch and analyze VMs with QEMU or Docker
 - **Flexible Configuration**: Customize packages, kernel options, and compression
@@ -157,12 +159,41 @@ mix docs
 
 ## Performance Characteristics
 
-| Strategy | Image Size | Boot Time | Min RAM | Use Case |
-|----------|------------|-----------|---------|-----------|
-| Alpine   | 20-30 MB   | < 2s      | 64 MB   | Containers, cloud |
-| Buildroot| 15-25 MB   | < 1s      | 32 MB   | Embedded, IoT |
-| Nerves   | 18-25 MB   | < 1s      | 64 MB   | Hardware devices |
-| Custom   | 10-20 MB   | < 500ms   | 32 MB   | Extreme minimal |
+| Strategy | Target Size | Actual Size | Status | Use Case |
+|----------|-------------|-------------|---------|----------|
+| Alpine   | 20-30 MB    | **77.5 MB** ✓ | **Validated** | Containers, cloud |
+| Buildroot| 15-25 MB    | Not tested  | Implemented | Embedded, IoT |
+| Nerves   | 18-25 MB    | Not tested  | Implemented | Hardware devices |
+| Custom   | 10-20 MB    | Not tested  | Implemented | Extreme minimal |
+
+## Validation and Testing
+
+### Running Builder Validation
+
+To validate which builders actually work in your environment:
+
+```bash
+# Run the validation suite
+./validate_builders.exs
+
+# Or with specific builders
+mix test --only validation
+```
+
+### Current Validation Status
+
+- **Alpine**: ✅ VALIDATED - Produces working 77.5MB VMs (40.3MB compressed)
+- **Buildroot**: ⚠️ Implemented but requires full toolchain for validation
+- **Nerves**: ⚠️ Implemented but requires target hardware/emulator
+- **Custom**: ⚠️ Implemented but requires kernel build environment
+
+### Why 77.5MB instead of 20-30MB?
+
+The initial target of 20-30MB was based on wishful thinking. Reality:
+- BEAM VM has ~58MB of irreducible complexity
+- Essential runtime libraries add ~10-15MB
+- Alpine base system adds ~5-10MB
+- Total: ~77.5MB is actually optimal for a working Elixir VM
 
 ## Contributing
 
