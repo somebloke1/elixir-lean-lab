@@ -36,3 +36,15 @@ elixir_lean_lab-*.tar
 # Environment files
 .env
 .env.local
+
+# MCP Context Portal database and files
+/context_portal/
+/alembic/
+/alembic.ini
+
+# Claude configuration
+/.claude/
+/CLAUDE.md
+
+# Logs
+/logs/
