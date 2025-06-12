@@ -1,0 +1,424 @@
+# .claude/execute-parallel-evolution-auto
+
+This command fully automates the EvoBuil parallel evolution workflow, creating three independent git worktrees where separate Claude instances autonomously improve the codebase for 1 hour each.
+
+## Usage
+
+```bash
+# Interactive mode (guides through process)
+claude < .claude/execute-parallel-evolution-auto
+
+# Automatic mode (runs immediately)
+claude < .claude/execute-parallel-evolution-auto --auto
+```
+
+## Interactive Process
+
+When you run this command, I will:
+1. Backup current work (git add/commit/push)
+2. Create three parallel worktree instances
+3. Launch three autonomous Claude sessions (1 hour each)
+4. Collect and analyze results when complete
+5. Present comparison without auto-merging
+
+## Safety First: Pre-Evolution Backup
+
+```bash
+# Ensure all work is saved
+git add -A
+git commit -m "Pre-evolution backup: $(date +%Y%m%d-%H%M%S)"
+git push origin main
+```
+
+## Automated Evolution Process
+
+### Phase 1: Setup (5 minutes)
+
+```bash
+#!/bin/bash
+# setup-evolution.sh
+
+# Verify prerequisites
+if ! command -v claude &> /dev/null; then
+    echo "Error: Claude CLI not found"
+    exit 1
+fi
+
+if ! git --version | grep -E "2\.[5-9]|[3-9]\." &> /dev/null; then
+    echo "Error: Git 2.5+ required for worktrees"
+    exit 1
+fi
+
+# Clean working directory check
+if [[ -n $(git status -s) ]]; then
+    echo "Working directory not clean. Backing up..."
+    git add -A
+    git commit -m "Auto-backup before evolution: $(date +%Y%m%d-%H%M%S)"
+    git push origin main
+fi
+
+# Generate UUIDs
+export UUID1=$(uuidgen | cut -c1-8)
+export UUID2=$(uuidgen | cut -c1-8)
+export UUID3=$(uuidgen | cut -c1-8)
+
+echo "Evolution instance IDs:"
+echo "  Instance 1: $UUID1"
+echo "  Instance 2: $UUID2"
+echo "  Instance 3: $UUID3"
+
+# Create branches and worktrees
+git checkout main
+git pull origin main
+
+for UUID in $UUID1 $UUID2 $UUID3; do
+    git branch evobuild-$UUID
+    git worktree add ../elixir-lean-lab-evolutions/instance-$UUID evobuild-$UUID
+    
+    # Create instance configuration
+    cat > ../elixir-lean-lab-evolutions/instance-$UUID/INSTANCE_CONFIG.md << EOF
+# Instance Configuration: $UUID
+
+## Identity
+Instance ID: $UUID
+Start Time: $(date)
+Duration: 1 hour (autonomous)
+Mode: Fully autonomous evolution
+
+## Mission Brief
+
+You are evolution instance $UUID working autonomously for exactly 1 hour to improve Elixir Lean Lab.
+
+### Key Context
+- Alpine builder: 77.5MB (verified) vs 20-30MB target
+- Other builders: implemented but not validated
+- BEAM VM: ~58MB irreducible minimum
+- Core issue: "implementation illusion" - code without validation
+
+### Your Objectives
+1. Identify and fix validation gaps
+2. Improve architectural abstractions  
+3. Optimize for real-world functionality
+4. Document all changes with evidence
+
+### Constraints
+- Work for exactly 1 hour then summarize findings
+- Validate all improvements with tests/benchmarks
+- Commit every 10-15 minutes with [$UUID] prefix
+- No coordination with other instances
+- Focus on quality over quantity
+
+### Success Metrics
+- Number of validated improvements
+- Performance gains achieved
+- Architectural clarity added
+- Test coverage increased
+
+## Autonomous Operation Protocol
+
+1. Begin with codebase analysis (10 min)
+2. Prioritize improvements based on impact (5 min)
+3. Implement and validate changes (40 min)
+4. Document results and learnings (5 min)
+
+Remember: Evidence-based improvements only. No theoretical changes.
+EOF
+done
+
+echo "Setup complete. Ready to launch instances."
+```
+
+### Phase 2: Parallel Execution (1 hour)
+
+```bash
+#!/bin/bash
+# launch-evolution.sh
+
+# Function to launch instance with timeout
+launch_instance() {
+    local UUID=$1
+    local INSTANCE_DIR="../elixir-lean-lab-evolutions/instance-$UUID"
+    
+    echo "Launching instance $UUID..."
+    
+    # Create launch script with 1-hour timeout
+    cat > $INSTANCE_DIR/run-evolution.sh << 'EOF'
+#!/bin/bash
+UUID=$1
+START_TIME=$(date +%s)
+END_TIME=$((START_TIME + 3600))  # 1 hour
+
+# Evolution session
+timeout 3600 claude --working-directory . << CLAUDE_SCRIPT
+You are evolution instance $UUID. Read INSTANCE_CONFIG.md for your mission brief.
+
+Work autonomously for 1 hour to improve the Elixir Lean Lab codebase based on the provided context. 
+
+Every 10-15 minutes, commit your progress with git commit -m "[$UUID] description of change"
+
+Focus on:
+1. Validating unverified builders
+2. Extracting shared abstractions
+3. Fixing architectural issues
+4. Adding missing tests
+
+At the end of the hour, create a summary file EVOLUTION_SUMMARY.md with:
+- Changes made
+- Improvements achieved  
+- Validation results
+- Lessons learned
+
+Begin now.
+CLAUDE_SCRIPT
+
+# Ensure summary exists
+if [ ! -f EVOLUTION_SUMMARY.md ]; then
+    echo "# Evolution Summary - Instance $UUID" > EVOLUTION_SUMMARY.md
+    echo "Session terminated at $(date)" >> EVOLUTION_SUMMARY.md
+    echo "Check git log for changes made." >> EVOLUTION_SUMMARY.md
+fi
+
+# Collect metrics
+echo "Collecting metrics for instance $UUID..."
+git log --oneline evobuild-$UUID ^main > commits_$UUID.log
+git diff --stat main...evobuild-$UUID > changes_$UUID.log
+EOF
+    
+    chmod +x $INSTANCE_DIR/run-evolution.sh
+    
+    # Launch in background
+    cd $INSTANCE_DIR
+    ./run-evolution.sh $UUID > evolution_$UUID.log 2>&1 &
+    echo $! > $INSTANCE_DIR/evolution.pid
+    cd - > /dev/null
+}
+
+# Launch all three instances
+echo "Starting parallel evolution..."
+launch_instance $UUID1
+launch_instance $UUID2
+launch_instance $UUID3
+
+echo "Three instances launched. They will run autonomously for 1 hour."
+echo "Monitor progress:"
+echo "  tail -f ../elixir-lean-lab-evolutions/instance-$UUID1/evolution_$UUID1.log"
+echo "  tail -f ../elixir-lean-lab-evolutions/instance-$UUID2/evolution_$UUID2.log"
+echo "  tail -f ../elixir-lean-lab-evolutions/instance-$UUID3/evolution_$UUID3.log"
+
+# Wait for completion
+echo "Waiting for evolution to complete (1 hour)..."
+sleep 3600
+
+echo "Evolution period complete!"
+```
+
+### Phase 3: Automated Analysis (No Auto-Merge)
+
+```bash
+#!/bin/bash
+# analyze-evolution.sh
+
+echo "=== EVOLUTION ANALYSIS REPORT ==="
+echo "Generated: $(date)"
+echo ""
+
+# Function to analyze instance
+analyze_instance() {
+    local UUID=$1
+    local INSTANCE_DIR="../elixir-lean-lab-evolutions/instance-$UUID"
+    
+    echo "## Instance $UUID Analysis"
+    
+    # Basic metrics
+    cd $INSTANCE_DIR
+    COMMITS=$(git log --oneline evobuild-$UUID ^main | wc -l)
+    FILES_CHANGED=$(git diff --name-only main...evobuild-$UUID | wc -l)
+    INSERTIONS=$(git diff --stat main...evobuild-$UUID | tail -1 | awk '{print $4}')
+    DELETIONS=$(git diff --stat main...evobuild-$UUID | tail -1 | awk '{print $6}')
+    
+    echo "- Commits: $COMMITS"
+    echo "- Files changed: $FILES_CHANGED"
+    echo "- Lines added: ${INSERTIONS:-0}"
+    echo "- Lines removed: ${DELETIONS:-0}"
+    
+    # Test improvements
+    if command -v mix &> /dev/null; then
+        echo "- Running tests..."
+        mix test --cover 2>&1 | grep -E "(tests|failures|Finished)" || echo "  Tests not available"
+    fi
+    
+    # Validation evidence
+    VALIDATIONS=$(git log evobuild-$UUID ^main --grep="\[validated\]" -i | wc -l)
+    echo "- Validated changes: $VALIDATIONS"
+    
+    # Size improvements
+    if [ -f size_report.txt ]; then
+        echo "- Size achievements:"
+        cat size_report.txt | sed 's/^/    /'
+    fi
+    
+    # Summary content
+    if [ -f EVOLUTION_SUMMARY.md ]; then
+        echo "- Evolution Summary:"
+        cat EVOLUTION_SUMMARY.md | sed 's/^/    /'
+    fi
+    
+    echo ""
+    cd - > /dev/null
+}
+
+# Analyze all instances
+for UUID in $UUID1 $UUID2 $UUID3; do
+    analyze_instance $UUID
+done
+
+# Comparison matrix
+echo "## Comparison Matrix"
+echo ""
+echo "| Metric | Instance $UUID1 | Instance $UUID2 | Instance $UUID3 |"
+echo "|--------|-----------------|-----------------|-----------------|"
+
+# Collect metrics for comparison
+get_metric() {
+    local UUID=$1
+    local METRIC=$2
+    local INSTANCE_DIR="../elixir-lean-lab-evolutions/instance-$UUID"
+    
+    cd $INSTANCE_DIR > /dev/null
+    case $METRIC in
+        "commits")
+            git log --oneline evobuild-$UUID ^main 2>/dev/null | wc -l
+            ;;
+        "files")
+            git diff --name-only main...evobuild-$UUID 2>/dev/null | wc -l
+            ;;
+        "validations")
+            git log evobuild-$UUID ^main --grep="\[validated\]" -i 2>/dev/null | wc -l
+            ;;
+    esac
+    cd - > /dev/null
+}
+
+echo "| Commits | $(get_metric $UUID1 commits) | $(get_metric $UUID2 commits) | $(get_metric $UUID3 commits) |"
+echo "| Files Changed | $(get_metric $UUID1 files) | $(get_metric $UUID2 files) | $(get_metric $UUID3 files) |"
+echo "| Validated Changes | $(get_metric $UUID1 validations) | $(get_metric $UUID2 validations) | $(get_metric $UUID3 validations) |"
+
+echo ""
+echo "## Recommended Selection Strategies"
+echo ""
+echo "Based on the analysis, consider these approaches:"
+echo ""
+echo "1. **Full Merge** - If one instance clearly outperforms:"
+echo "   \`\`\`bash"
+echo "   git checkout main"
+echo "   git merge evobuild-\$BEST_UUID"
+echo "   \`\`\`"
+echo ""
+echo "2. **Cherry-Pick** - Select best individual changes:"
+echo "   \`\`\`bash"
+echo "   git cherry-pick \$COMMIT_HASH"
+echo "   \`\`\`"
+echo ""
+echo "3. **Hybrid** - Combine best elements manually:"
+echo "   \`\`\`bash"
+echo "   git checkout -b evolution-combined"
+echo "   # Manually integrate best changes"
+echo "   \`\`\`"
+echo ""
+echo "## IMPORTANT: Human Review Required"
+echo ""
+echo "No automatic merging will occur. Please:"
+echo "1. Review the analysis above"
+echo "2. Examine each instance's changes"
+echo "3. Select the best approach"
+echo "4. Manually merge or cherry-pick"
+echo ""
+echo "Instance directories:"
+for UUID in $UUID1 $UUID2 $UUID3; do
+    echo "- ../elixir-lean-lab-evolutions/instance-$UUID"
+done
+
+# Save report
+echo ""
+echo "This report saved to: evolution-analysis-$(date +%Y%m%d-%H%M%S).md"
+```
+
+## Complete Automation Script
+
+```bash
+#!/bin/bash
+# execute-parallel-evolution-auto.sh
+
+set -e  # Exit on error
+
+echo "=== ELIXIR LEAN LAB PARALLEL EVOLUTION ==="
+echo ""
+
+# Check for --auto flag
+AUTO_MODE=false
+if [[ "$1" == "--auto" ]]; then
+    AUTO_MODE=true
+    echo "Running in automatic mode..."
+else
+    echo "This will:"
+    echo "1. Backup your current work"
+    echo "2. Create 3 parallel development branches"
+    echo "3. Run 3 autonomous Claude sessions (1 hour each)"
+    echo "4. Analyze results (no auto-merge)"
+    echo ""
+    read -p "Continue? (y/n) " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Evolution cancelled."
+        exit 0
+    fi
+fi
+
+# Run phases
+echo "Phase 1: Setup and backup..."
+source ./setup-evolution.sh
+
+echo "Phase 2: Launching parallel instances..."
+source ./launch-evolution.sh
+
+echo "Phase 3: Analysis will run after 1 hour..."
+(sleep 3600 && source ./analyze-evolution.sh) &
+
+echo ""
+echo "Evolution in progress!"
+echo "Check back in 1 hour for results."
+```
+
+## Output Format
+
+After 1 hour, you'll receive:
+1. Detailed analysis report for each instance
+2. Comparison matrix of key metrics
+3. Specific merge/cherry-pick recommendations
+4. NO automatic merging - human review required
+
+## Manual Override
+
+To stop evolution early:
+```bash
+# Kill all evolution processes
+pkill -f "evolution_.*\.log"
+
+# Run analysis immediately
+./analyze-evolution.sh
+```
+
+## Post-Evolution Cleanup
+
+After selecting best changes:
+```bash
+# Remove worktrees (keeps branches)
+git worktree remove ../elixir-lean-lab-evolutions/instance-$UUID1
+git worktree remove ../elixir-lean-lab-evolutions/instance-$UUID2
+git worktree remove ../elixir-lean-lab-evolutions/instance-$UUID3
+
+# Push selected branches for history
+git push origin evobuild-$SELECTED_UUID
+```
+
+Ready to start automated parallel evolution? The system will handle everything except the final merge decision.
