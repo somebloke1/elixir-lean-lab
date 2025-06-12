@@ -84,7 +84,16 @@ defmodule ElixirLeanLab.Builder.Alpine do
 
     # Set up environment
     ENV LANG=C.UTF-8
+    ENV PATH="/usr/local/bin:$PATH"
+    ENV ERL_LIBS="/usr/local/lib/elixir/lib"
     ENV ERL_AFLAGS="-kernel shell_history enabled"
+
+    # Fix permissions for Elixir installation
+    USER root
+    RUN chmod +x /usr/local/bin/* && \
+        chown -R elixir:elixir /usr/local/lib/elixir && \
+        chown -R elixir:elixir /usr/local/lib/erlang
+    USER elixir
 
     #{if config.app_path, do: "CMD [\"/app/bin/start\"]", else: "CMD [\"iex\"]"}
 
@@ -113,7 +122,7 @@ defmodule ElixirLeanLab.Builder.Alpine do
     """
   end
 
-  defp strip_otp_commands(config \ %{}) do
+  defp strip_otp_commands(config \\ %{}) do
     # Get OTP stripping configuration from config
     otp_opts = [
       ssh: Map.get(config, :keep_ssh, false),
