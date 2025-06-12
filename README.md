@@ -8,59 +8,104 @@ This project demonstrates how Lean principles can be applied in Elixir developme
 
 ## Features
 
-- Exploration of Lean principles in functional programming
-- Pattern matching for clear, maintainable logic
-- OTP patterns for fault-tolerant systems
-- Property-based testing with StreamData
-- REPL-driven development for rapid experimentation
+- **Lean Pipeline Architecture**: Functional data processing with composable stages
+- **Stream Processing**: Lazy evaluation with backpressure support
+- **OTP Integration**: Supervised processes for fault-tolerant systems
+- **Telemetry Metrics**: Built-in performance monitoring and observability
+- **Property-Based Testing**: Comprehensive test coverage with StreamData
+- **Zero-Copy Operations**: Efficient data transformation without waste
+- **Composable Stages**: 10+ built-in stages for common transformations
+- **REPL-Driven Development**: Rapid experimentation and iteration
 
 ## Quick Start
 
 ### Prerequisites
 
-- Elixir 1.15+ (recommended: use asdf for version management)
-- Erlang/OTP 26+
+- Elixir 1.15.7 or higher
+- Erlang/OTP 26.2.1 or higher
+- Git
 
-### Setup
+### Automated Setup
+
+The easiest way to get started is to use our setup script:
 
 ```bash
-# Install Elixir/Erlang with asdf
-asdf plugin-add elixir
+# Clone the repository
+git clone https://github.com/somebloke1/elixir-lean-lab.git
+cd elixir-lean-lab
+
+# Run the setup script
+./scripts/setup.sh
+```
+
+The setup script will:
+- ✅ Check for and optionally install asdf version manager
+- ✅ Install the correct Erlang/Elixir versions
+- ✅ Configure your shell (bash/zsh)
+- ✅ Install all dependencies
+- ✅ Run tests to verify everything works
+- ✅ Provide helpful next steps
+
+### Manual Setup
+
+If you prefer to set up manually:
+
+```bash
+# Using asdf (recommended)
 asdf plugin-add erlang
-asdf install erlang 26.1
+asdf plugin-add elixir
+asdf install erlang 26.2.1
 asdf install elixir 1.15.7-otp-26
 
 # Or use your system's package manager
-# brew install elixir        # macOS
-# apt-get install elixir     # Ubuntu/Debian
+brew install elixir        # macOS
+sudo apt-get install elixir # Ubuntu/Debian
 ```
 
 ### Development
 
 ```bash
-# Get dependencies
-mix deps.get
+# Start interactive shell (recommended for development)
+iex -S mix
 
 # Run tests
 mix test
 
-# Start interactive shell
-iex -S mix
+# Format code
+mix format
 
-# Run the application
-mix run --no-halt
+# Run the demo
+./scripts/demo.sh
+
+# Run benchmarks
+./scripts/benchmark.sh
+
+# Run full CI suite locally
+./scripts/ci.sh
 ```
 
 ## Project Structure
 
 ```
 .
+├── .github/         # GitHub Actions CI/CD workflows
 ├── config/          # Runtime configuration
+├── docs/            # Architecture and usage documentation
 ├── lib/             # Application code
+│   └── lean_pipeline/   # Core pipeline implementation
+│       └── stages/      # Pipeline stage implementations
+├── scripts/         # Development and operational scripts
 ├── test/           # Test files
-├── mix.exs         # Project definition and dependencies
-└── CLAUDE.md       # Project context and guidelines
+└── mix.exs         # Project definition and dependencies
 ```
+
+### Key Components
+
+- **LeanPipeline**: Main API for building functional data pipelines
+- **LeanPipeline.Flow**: Stream management with backpressure control
+- **LeanPipeline.Metrics**: Telemetry-based performance monitoring
+- **LeanPipeline.Supervisor**: OTP supervision for fault tolerance
+- **Pipeline Stages**: Map, Filter, FlatMap, Window, Take, Drop, Deduplicate, Tap
 
 ## Lean Principles Applied
 
