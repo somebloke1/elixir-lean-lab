@@ -1,0 +1,261 @@
+# .claude/commands/execute-parallel-evolution
+
+This command orchestrates parallel evolution of the codebase using multiple autonomous Claude instances.
+
+## Usage
+
+```bash
+claude < .claude/commands/execute-parallel-evolution
+```
+
+## Configuration
+
+When you run this command, I'll ask for:
+- **n**: Number of parallel instances (default: 3)
+- **t**: Runtime in minutes per instance (default: 60)
+- **require_ack**: Require user acknowledgment before branch selection (default: true)
+- **auto_launch**: Automatically launch instances without confirmation (default: false)
+
+## Phase 1: Setup and Initialization
+
+I will:
+1. Generate n UUID8 identifiers for branches
+2. Create n git branches from current HEAD
+3. Set up n worktree directories
+4. Verify each worktree has complete codebase
+5. Create instance briefing documents
+6. Prepare launch scripts
+
+```bash
+# Example for n=3
+UUID1=$(uuidgen | cut -c1-8)
+UUID2=$(uuidgen | cut -c1-8)
+UUID3=$(uuidgen | cut -c1-8)
+
+# Create branches and worktrees
+for UUID in $UUID1 $UUID2 $UUID3; do
+    git branch evobuild-$UUID
+    git worktree add ../elixir-lean-lab-evolutions/instance-$UUID evobuild-$UUID
+    
+    # Verify worktree
+    if [ ! -f ../elixir-lean-lab-evolutions/instance-$UUID/mix.exs ]; then
+        echo "ERROR: Worktree missing codebase"
+        exit 1
+    fi
+done
+```
+
+## Phase 2: Parallel Execution
+
+I will launch n background processes:
+
+```bash
+# Launch script for each instance
+for i in $(seq 1 $n); do
+    UUID=${UUIDS[$i]}
+    INSTANCE_DIR="../elixir-lean-lab-evolutions/instance-$UUID"
+    
+    # Create launch script
+    cat > $INSTANCE_DIR/run-instance.sh << 'EOF'
+#!/bin/bash
+UUID=$1
+MINUTES=$2
+TIMEOUT=$((MINUTES * 60))
+
+# Launch Claude with timeout
+timeout $TIMEOUT claude --dangerously-skip-permissions << INSTRUCTIONS
+You are evolution instance $UUID working on branch evobuild-$UUID.
+
+CRITICAL: First verify you are on the correct branch:
+git branch --show-current
+
+If not on evobuild-$UUID, switch to it:
+git checkout evobuild-$UUID
+
+Your mission:
+1. Read DEVELOPMENT_BRIEF.md for context
+2. Analyze the codebase for improvement opportunities
+3. Implement high-impact changes with validation
+4. Commit every 10-15 minutes with [$UUID] prefix
+5. Create EVOLUTION_SUMMARY.md before time expires
+
+Focus on:
+- Validating unverified builders
+- Extracting shared abstractions
+- Fixing architectural issues
+- Adding missing tests
+- Optimizing for real performance gains
+
+Work autonomously for $MINUTES minutes. Validate all claims with evidence.
+INSTRUCTIONS
+
+# Ensure summary exists
+if [ ! -f EVOLUTION_SUMMARY.md ]; then
+    echo "# Evolution Summary - Instance $UUID" > EVOLUTION_SUMMARY.md
+    echo "Session terminated after $MINUTES minutes" >> EVOLUTION_SUMMARY.md
+    git log --oneline evobuild-$UUID ^main > commits.log
+fi
+EOF
+    
+    chmod +x $INSTANCE_DIR/run-instance.sh
+    
+    # Launch in background
+    cd $INSTANCE_DIR
+    nohup ./run-instance.sh $UUID $t > evolution-$UUID.log 2>&1 &
+    echo $! > instance.pid
+    cd - > /dev/null
+    
+    echo "Launched instance $UUID (PID: $(cat $INSTANCE_DIR/instance.pid))"
+done
+
+# Monitor progress
+echo "Monitoring $n instances for $t minutes..."
+sleep $((t * 60))
+```
+
+## Phase 3: Analysis and Recommendation
+
+After execution completes, I will:
+
+### 3.1 Collect Metrics
+
+```bash
+# For each instance
+for UUID in $UUIDS; do
+    echo "=== Instance $UUID Analysis ==="
+    
+    # Quantitative metrics
+    COMMITS=$(git log --oneline evobuild-$UUID ^main | wc -l)
+    FILES_CHANGED=$(git diff --name-only main...evobuild-$UUID | wc -l)
+    TESTS_ADDED=$(git diff main...evobuild-$UUID | grep -E "^\+.*test" | wc -l)
+    VALIDATIONS=$(git log evobuild-$UUID ^main --grep="\[validated\]" | wc -l)
+    
+    # Check for build success
+    cd ../elixir-lean-lab-evolutions/instance-$UUID
+    MIX_TEST_RESULT=$(mix test 2>&1 | tail -1)
+    cd - > /dev/null
+    
+    # Size improvements (if any)
+    SIZE_CHANGE=$(git diff main...evobuild-$UUID | grep -E "size.*MB" | head -1)
+done
+```
+
+### 3.2 Generate Recommendation
+
+Based on analysis, I'll recommend one of:
+
+1. **Select Winner**: One branch clearly superior
+   ```
+   Recommendation: Merge evobuild-$BEST_UUID
+   - Highest validation count: 15
+   - All tests passing
+   - 8% size reduction achieved
+   - Clean architecture improvements
+   ```
+
+2. **Run Additional Rounds**: No clear winner
+   ```
+   Recommendation: Run 3 more instances
+   - Current results inconclusive
+   - All instances hit similar blockers
+   - Need more diverse approaches
+   ```
+
+3. **Scale Back and Retry**: Scope too ambitious
+   ```
+   Recommendation: Reduce scope and rerun
+   - All instances failed core objectives
+   - Focus on single builder validation
+   - Reduce time to 30 minutes
+   ```
+
+4. **Cherry-Pick Hybrid**: Multiple good solutions
+   ```
+   Recommendation: Combine best elements
+   - Instance A: Best validation framework
+   - Instance B: Size optimizations
+   - Instance C: Architecture refactor
+   ```
+
+### 3.3 User Acknowledgment
+
+If `require_ack=true`:
+```
+=== EVOLUTION COMPLETE ===
+
+Analysis Summary:
+[Detailed metrics table]
+
+Recommendation: Merge evobuild-a1b2c3d4
+
+This branch achieved:
+- 12 validated improvements
+- 7% size reduction
+- 95% test coverage
+- Clean architectural separation
+
+Do you want to:
+1. Accept recommendation and merge
+2. Review branches manually first
+3. Run additional evolution rounds
+4. Abandon and cleanup
+
+Your choice (1-4):
+```
+
+## Safety Measures
+
+- All work in isolated worktrees
+- Main branch never touched
+- Automatic cleanup of failed instances
+- Comprehensive logging for debugging
+- No automatic merging without explicit approval
+
+## Example Invocation
+
+```
+> claude < .claude/commands/execute-parallel-evolution
+
+=== PARALLEL EVOLUTION SETUP ===
+
+Number of instances (n) [3]: 5
+Runtime per instance in minutes (t) [60]: 30
+Require acknowledgment before selection [true]: true
+Auto-launch instances [false]: true
+
+Confirming configuration:
+- 5 parallel instances
+- 30 minutes each
+- User acknowledgment required
+- Auto-launch enabled
+
+Proceed? (y/n): y
+
+Phase 1: Setting up 5 instances...
+[Setup output]
+
+Phase 2: Launching instances...
+[Launch output]
+
+Phase 3: Analyzing results...
+[Analysis and recommendation]
+```
+
+## Post-Evolution
+
+After selection:
+```bash
+# Merge selected branch
+git checkout main
+git merge evobuild-$SELECTED
+
+# Cleanup worktrees
+for UUID in $UUIDS; do
+    git worktree remove ../elixir-lean-lab-evolutions/instance-$UUID
+done
+
+# Archive branches
+git push origin evobuild-$UUID1 evobuild-$UUID2 ...
+```
+
+Ready to orchestrate parallel evolution with full control and analysis.
