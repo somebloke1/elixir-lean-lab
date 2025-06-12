@@ -1,53 +1,54 @@
 # Elixir Lean Lab
 
-Alpine container-based minimal Elixir VM implementation.
+Experimental Elixir project exploring Lean software development principles through functional programming patterns.
 
 ## Overview
 
-This project implements the "Balanced VM" architecture from the elixir-lean project, using Alpine Linux containers to achieve a minimal footprint (target: 20-30MB) while maintaining development capabilities.
+This project demonstrates how Lean principles can be applied in Elixir development, leveraging the language's functional paradigm, immutability, and OTP framework to eliminate waste and build quality in.
 
 ## Features
 
-- Multi-stage Docker builds for size optimization
-- Alpine Linux base with musl libc
-- Full IEx shell access
-- Production-ready release builds
-- Debugging capabilities preserved
+- Exploration of Lean principles in functional programming
+- Pattern matching for clear, maintainable logic
+- OTP patterns for fault-tolerant systems
+- Property-based testing with StreamData
+- REPL-driven development for rapid experimentation
 
 ## Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Make (optional, for convenience commands)
+- Elixir 1.15+ (recommended: use asdf for version management)
+- Erlang/OTP 26+
 
-### Building
+### Setup
 
 ```bash
-# Build the Docker image
-make build
+# Install Elixir/Erlang with asdf
+asdf plugin-add elixir
+asdf plugin-add erlang
+asdf install erlang 26.1
+asdf install elixir 1.15.7-otp-26
 
-# Or directly with Docker
-docker build -t elixir-lean-lab:latest .
+# Or use your system's package manager
+# brew install elixir        # macOS
+# apt-get install elixir     # Ubuntu/Debian
 ```
 
-### Running
+### Development
 
 ```bash
-# Run the container
-make run
+# Get dependencies
+mix deps.get
 
-# Or with docker-compose
-make dev
+# Run tests
+mix test
 
-# Access IEx shell
-make shell
-```
+# Start interactive shell
+iex -S mix
 
-### Check Image Size
-
-```bash
-make size
+# Run the application
+mix run --no-halt
 ```
 
 ## Project Structure
@@ -56,52 +57,36 @@ make size
 .
 ├── config/          # Runtime configuration
 ├── lib/             # Application code
-├── priv/            # Static assets
-├── Dockerfile       # Multi-stage build definition
-├── docker-compose.yml
-└── Makefile         # Convenience commands
+├── test/           # Test files
+├── mix.exs         # Project definition and dependencies
+└── CLAUDE.md       # Project context and guidelines
 ```
 
-## Development
+## Lean Principles Applied
 
-1. Install Elixir locally (optional):
-   ```bash
-   # Using asdf
-   asdf plugin-add elixir
-   asdf install elixir 1.15.7-otp-26
-   
-   # Or using apt
-   sudo apt-get install elixir
-   ```
+1. **Eliminate Waste**: No unnecessary tooling or dependencies
+2. **Build Quality In**: Property-based testing, type specifications
+3. **Create Knowledge**: Clear documentation and code patterns
+4. **Defer Commitment**: Flexible architecture for experimentation
+5. **Deliver Fast**: REPL-driven development, quick feedback loops
+6. **Respect People**: Readable code, clear intentions
+7. **Optimize the Whole**: System-level thinking with OTP
 
-2. Install dependencies:
-   ```bash
-   mix deps.get
-   ```
+## Development Workflow
 
-3. Run tests:
-   ```bash
-   mix test
-   ```
-
-## Size Optimization
-
-The Dockerfile uses several techniques to minimize image size:
-
-1. Multi-stage builds to exclude build dependencies
-2. Alpine Linux base image
-3. Only essential runtime dependencies
-4. Stripped binaries
-5. No documentation or man pages
+1. Use `iex -S mix` for interactive development
+2. Write property-based tests for invariants
+3. Document patterns and discoveries
+4. Keep modules small and focused
+5. Leverage pattern matching for clarity
 
 ## Configuration
 
-The application uses standard Elixir configuration in `config/`.
-
-Environment-specific settings:
-- `dev.exs` - Development configuration
-- `prod.exs` - Production configuration (used in Docker)
+The application uses standard Elixir configuration in `config/`:
+- `config.exs` - Base configuration
+- `dev.exs` - Development settings
 - `test.exs` - Test configuration
+- `prod.exs` - Production settings
 
 ## License
 
