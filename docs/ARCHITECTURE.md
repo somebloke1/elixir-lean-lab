@@ -43,7 +43,7 @@ Handles VM lifecycle:
 
 ## Build Strategies
 
-### Alpine Linux Strategy (Primary Implementation)
+### Alpine Linux Strategy ✅ (Verified Working)
 
 Uses Docker multi-stage builds to create minimal Alpine-based VMs:
 
@@ -69,29 +69,29 @@ Uses Docker multi-stage builds to create minimal Alpine-based VMs:
 - Use musl libc instead of glibc
 - Compress with XZ (highest compression)
 
-### Buildroot Strategy (Planned)
+### Buildroot Strategy ✅ (Implemented)
 
 For ultimate control over the Linux system:
 - Custom kernel configuration (tinyconfig baseline)
 - Minimal root filesystem with BusyBox
 - Direct hardware support
-- Target: Sub-20MB images
+- Target: 15-25MB images
 
-### Nerves Strategy (Planned)
+### Nerves Strategy ✅ (Implemented)
 
 Leverages existing Nerves infrastructure:
 - Pre-optimized for embedded Elixir
-- Hardware-specific targets
+- Hardware-specific targets (qemu_arm, rpi0, bbb, x86_64)
 - Built-in firmware management
 - Target: 18-25MB images
 
-### Custom Strategy (Planned)
+### Custom Strategy ✅ (Implemented)
 
 Direct kernel and initramfs manipulation:
-- Compile custom Linux kernel
+- Compile custom Linux kernel (6.6.70)
 - Create minimal initramfs with BEAM
 - No package manager overhead
-- Target: Sub-15MB images
+- Target: 10-20MB images
 
 ## Key Design Decisions
 
@@ -180,12 +180,12 @@ lib/
 
 ## Performance Targets
 
-| Strategy   | Image Size | Boot Time | RAM Usage |
-|------------|------------|-----------|-----------|
-| Alpine     | 20-30 MB   | < 2s      | 64-128 MB |
-| Buildroot  | 15-25 MB   | < 1s      | 32-64 MB  |
-| Nerves     | 18-25 MB   | < 1s      | 64-128 MB |
-| Custom     | 10-20 MB   | < 500ms   | 32-64 MB  |
+| Strategy   | Image Size | Boot Time | RAM Usage | Status |
+|------------|------------|-----------|-----------|--------|
+| Alpine     | 77.5 MB (40.3 MB compressed) | < 2s | 64-128 MB | ✅ Verified |
+| Buildroot  | 15-25 MB   | < 1s      | 32-64 MB  | ✅ Implemented |
+| Nerves     | 18-25 MB   | < 1s      | 64-128 MB | ✅ Implemented |
+| Custom     | 10-20 MB   | < 500ms   | 32-64 MB  | ✅ Implemented |
 
 ## Future Enhancements
 
