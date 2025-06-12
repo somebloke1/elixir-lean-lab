@@ -1,24 +1,37 @@
 2025-06-11 19:06:20,179 - INFO - __main__ - Logging to file: ./logs/conport.log
 2025-06-11 19:06:20,179 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
-2025-06-11 19:06:20,179 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab') is the correct project workspace.
-2025-06-11 19:06:20,179 - INFO - context_portal_mcp.db.database - Copying missing alembic.ini from templates to /home/dgk/projects/my_projects/elixir-lean-lab/alembic.ini
-2025-06-11 19:06:20,180 - INFO - context_portal_mcp.db.database - Copying missing alembic/ scripts from templates to /home/dgk/projects/my_projects/elixir-lean-lab/alembic
-2025-06-11 19:06:20,181 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
+2025-06-11 19:06:20,179 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: <REDACTED>/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('<REDACTED>/projects/my_projects/elixir-lean-lab') is the correct project workspace.
+2025-06-11 19:06:20,179 - INFO - context_portal_mcp.db.database - Copying missing alembic.ini from templates to <REDACTED>/projects/my_projects/elixir-lean-lab/alembic.ini
+2025-06-11 19:06:20,180 - INFO - context_portal_mcp.db.database - Copying missing alembic/ scripts from templates to <REDACTED>/projects/my_projects/elixir-lean-lab/alembic
+2025-06-11 19:06:20,181 - INFO - __main__ - STDIO mode: Using effective_workspace_id '<REDACTED>/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
 2025-06-11 19:06:20,185 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
 2025-06-11 19:06:20,190 - INFO - __main__ - ConPort FastMCP server lifespan starting.
 2025-06-11 19:06:20,202 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
 2025-06-11 19:06:20,204 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
 2025-06-11 19:10:26,765 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
-2025-06-11 19:10:26,767 - INFO - context_portal_mcp.db.database - Alembic: Script directory /home/dgk/projects/my_projects/elixir-lean-lab/alembic confirmed to exist by Python.
-2025-06-11 19:10:26,767 - INFO - context_portal_mcp.db.database - Running Alembic migrations for database: /home/dgk/projects/my_projects/elixir-lean-lab/context_portal/context.db
+2025-06-11 19:10:26,767 - INFO - context_portal_mcp.db.database - Alembic: Script directory <REDACTED>/projects/my_projects/elixir-lean-lab/alembic confirmed to exist by Python.
+2025-06-11 19:10:26,767 - INFO - context_portal_mcp.db.database - Running Alembic migrations for database: <REDACTED>/projects/my_projects/elixir-lean-lab/context_portal/context.db
 2025-06-11 19:19:45,603 - INFO - __main__ - Logging to file: ./logs/conport.log
 2025-06-11 19:19:45,604 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
-2025-06-11 19:19:45,604 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab') is the correct project workspace.
-2025-06-11 19:19:45,604 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
+2025-06-11 19:19:45,604 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: <REDACTED>/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('<REDACTED>/projects/my_projects/elixir-lean-lab') is the correct project workspace.
+2025-06-11 19:19:45,604 - INFO - __main__ - STDIO mode: Using effective_workspace_id '<REDACTED>/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
 2025-06-11 19:19:45,608 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
 2025-06-11 19:19:45,613 - INFO - __main__ - ConPort FastMCP server lifespan starting.
 2025-06-11 19:19:45,624 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
 2025-06-11 19:19:45,627 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
 2025-06-11 19:22:10,586 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
-2025-06-11 19:22:10,589 - INFO - context_portal_mcp.db.database - Alembic: Script directory /home/dgk/projects/my_projects/elixir-lean-lab/alembic confirmed to exist by Python.
-2025-06-11 19:22:10,589 - INFO - context_portal_mcp.db.database - Running Alembic migrations for database: /home/dgk/projects/my_projects/elixir-lean-lab/context_portal/context.db
+2025-06-11 19:22:10,589 - INFO - context_portal_mcp.db.database - Alembic: Script directory <REDACTED>/projects/my_projects/elixir-lean-lab/alembic confirmed to exist by Python.
+2025-06-11 19:22:10,589 - INFO - context_portal_mcp.db.database - Running Alembic migrations for database: <REDACTED>/projects/my_projects/elixir-lean-lab/context_portal/context.db
+2025-06-11 21:22:04,837 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-11 21:22:04,837 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
+2025-06-11 21:22:04,838 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: <REDACTED>/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('<REDACTED>/projects/my_projects/elixir-lean-lab') is the correct project workspace.
+2025-06-11 21:22:04,838 - INFO - context_portal_mcp.db.database - Copying missing alembic.ini from templates to <REDACTED>/projects/my_projects/elixir-lean-lab/alembic.ini
+2025-06-11 21:22:04,838 - INFO - context_portal_mcp.db.database - Copying missing alembic/ scripts from templates to <REDACTED>/projects/my_projects/elixir-lean-lab/alembic
+2025-06-11 21:22:04,840 - INFO - __main__ - STDIO mode: Using effective_workspace_id '<REDACTED>/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
+2025-06-11 21:22:04,844 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-11 21:22:04,849 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-11 21:22:04,857 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2025-06-11 21:22:04,862 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
+2025-06-12 02:18:40,533 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2025-06-12 02:18:40,536 - INFO - context_portal_mcp.db.database - Alembic: Script directory <REDACTED>/projects/my_projects/elixir-lean-lab/alembic confirmed to exist by Python.
+2025-06-12 02:18:40,536 - INFO - context_portal_mcp.db.database - Running Alembic migrations for database: <REDACTED>/projects/my_projects/elixir-lean-lab/context_portal/context.db
