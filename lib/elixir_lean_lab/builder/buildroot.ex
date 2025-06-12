@@ -10,6 +10,7 @@ defmodule ElixirLeanLab.Builder.Buildroot do
   """
 
   alias ElixirLeanLab.{Builder, Config, KernelConfig}
+  alias ElixirLeanLab.Builder.Common
 
   @buildroot_version "2024.02.1"
   @erlang_otp_version "26.2.1"
@@ -26,12 +27,11 @@ defmodule ElixirLeanLab.Builder.Buildroot do
       
       Builder.report_size(vm_image)
       
-      {:ok, %{
-        image: vm_image,
-        type: :buildroot,
-        size_mb: get_image_size_mb(vm_image),
-        artifacts: artifacts
-      }}
+      {:ok, Common.generate_build_report(
+        vm_image,
+        :buildroot,
+        artifacts
+      )}
     end
   end
 
@@ -44,18 +44,10 @@ defmodule ElixirLeanLab.Builder.Buildroot do
       url = "https://buildroot.org/downloads/buildroot-#{@buildroot_version}.tar.xz"
       tarball = Path.join(build_dir, "buildroot-#{@buildroot_version}.tar.xz")
       
-      # Download Buildroot
-      case System.cmd("wget", ["-O", tarball, url], cd: build_dir) do
-        {_, 0} ->
-          # Extract
-          case System.cmd("tar", ["-xf", tarball], cd: build_dir) do
-            {_, 0} ->
-              {:ok, buildroot_dir}
-            {output, _} ->
-              {:error, "Failed to extract Buildroot: #{output}"}
-          end
-        {output, _} ->
-          {:error, "Failed to download Buildroot: #{output}"}
+      # Download and extract Buildroot
+      with {:ok, _} <- Common.download_file(url, tarball),
+           {:ok, _} <- Common.extract_archive(tarball, build_dir) do
+        {:ok, buildroot_dir}
       end
     end
   end
@@ -302,26 +294,19 @@ defmodule ElixirLeanLab.Builder.Buildroot do
     vm_name = "buildroot-vm.tar.xz"
     vm_path = Path.join(config.output_dir, vm_name)
     
-    # Create a tarball with all VM components
+    # Prepare files for packaging
     files_to_package = [
-      artifacts.kernel,
-      artifacts.rootfs
-    ] ++ (if File.exists?(artifacts.qcow2), do: [artifacts.qcow2], else: [])
+      {artifacts.kernel, Path.basename(artifacts.kernel)},
+      {artifacts.rootfs, Path.basename(artifacts.rootfs)}
+    ]
     
-    # Use tar to package everything
-    file_args = files_to_package |> Enum.map(&Path.basename/1)
-    images_dir = Path.dirname(artifacts.kernel)
-    
-    case System.cmd("tar", ["-cJf", vm_path] ++ file_args, cd: images_dir) do
-      {_, 0} -> {:ok, vm_path}
-      {output, _} -> {:error, "Failed to package VM: #{output}"}
+    files_to_package = if File.exists?(artifacts.qcow2) do
+      [{artifacts.qcow2, Path.basename(artifacts.qcow2)} | files_to_package]
+    else
+      files_to_package
     end
+    
+    Common.package_files(files_to_package, vm_path, format: :tar_xz)
   end
 
-  defp get_image_size_mb(path) do
-    case File.stat(path) do
-      {:ok, %{size: size}} -> Float.round(size / 1_048_576, 2)
-      _ -> 0.0
-    end
-  end
 end

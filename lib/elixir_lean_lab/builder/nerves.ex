@@ -10,6 +10,7 @@ defmodule ElixirLeanLab.Builder.Nerves do
   """
 
   alias ElixirLeanLab.{Builder, Config}
+  alias ElixirLeanLab.Builder.Common
 
   @nerves_targets %{
     qemu_arm: "nerves_system_qemu_arm",
@@ -31,13 +32,12 @@ defmodule ElixirLeanLab.Builder.Nerves do
       
       Builder.report_size(vm_image)
       
-      {:ok, %{
-        image: vm_image,
-        type: :nerves,
-        target: target,
-        size_mb: get_image_size_mb(vm_image),
-        firmware: firmware_path
-      }}
+      {:ok, Common.generate_build_report(
+        vm_image,
+        :nerves,
+        %{firmware: firmware_path},
+        %{target: target}
+      )}
     end
   end
 
@@ -300,12 +300,6 @@ defmodule ElixirLeanLab.Builder.Nerves do
     end
   end
 
-  defp get_image_size_mb(path) do
-    case File.stat(path) do
-      {:ok, %{size: size}} -> Float.round(size / 1_048_576, 2)
-      _ -> 0.0
-    end
-  end
 
   @doc """
   Get available Nerves targets.

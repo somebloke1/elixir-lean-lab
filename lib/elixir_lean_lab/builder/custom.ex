@@ -10,6 +10,7 @@ defmodule ElixirLeanLab.Builder.Custom do
   """
 
   alias ElixirLeanLab.{Builder, Config, KernelConfig, OTPStripper}
+  alias ElixirLeanLab.Builder.Common
 
   @kernel_version "6.6.70"
   @busybox_version "1.36.1"
@@ -23,13 +24,11 @@ defmodule ElixirLeanLab.Builder.Custom do
       
       Builder.report_size(vm_image)
       
-      {:ok, %{
-        image: vm_image,
-        type: :custom,
-        size_mb: get_image_size_mb(vm_image),
-        kernel: kernel_path,
-        initramfs: initramfs_path
-      }}
+      {:ok, Common.generate_build_report(
+        vm_image,
+        :custom,
+        %{kernel: kernel_path, initramfs: initramfs_path}
+      )}
     end
   end
 
@@ -353,12 +352,6 @@ defmodule ElixirLeanLab.Builder.Custom do
     end
   end
 
-  defp get_image_size_mb(path) do
-    case File.stat(path) do
-      {:ok, %{size: size}} -> Float.round(size / 1_048_576, 2)
-      _ -> 0.0
-    end
-  end
 
   @doc """
   Estimate final VM size based on configuration.

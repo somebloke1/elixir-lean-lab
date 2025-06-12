@@ -10,6 +10,7 @@ defmodule ElixirLeanLab.Builder.Alpine do
   """
 
   alias ElixirLeanLab.{Builder, Config, OTPStripper}
+  alias ElixirLeanLab.Builder.Common
 
   @base_packages ~w(libstdc++ openssl ncurses-libs zlib)
   @build_packages ~w(git build-base nodejs npm python3)
@@ -23,12 +24,11 @@ defmodule ElixirLeanLab.Builder.Alpine do
       
       Builder.report_size(vm_image)
       
-      {:ok, %{
-        image: vm_image,
-        type: :alpine,
-        size_mb: get_image_size_mb(vm_image),
-        dockerfile: dockerfile_path
-      }}
+      {:ok, Common.generate_build_report(
+        vm_image,
+        :alpine,
+        %{dockerfile: dockerfile_path}
+      )}
     end
   end
 
@@ -173,10 +173,4 @@ defmodule ElixirLeanLab.Builder.Alpine do
   end
   defp compress_image(tar_path, _), do: tar_path
 
-  defp get_image_size_mb(path) do
-    case File.stat(path) do
-      {:ok, %{size: size}} -> Float.round(size / 1_048_576, 2)
-      _ -> 0.0
-    end
-  end
 end
