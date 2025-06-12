@@ -60,12 +60,15 @@ defmodule ElixirLeanLab.Builder.Custom do
     config_content = generate_kernel_config(kernel_config, config)
     
     config_path = Path.join(kernel_dir, ".config")
-    File.write!(config_path, config_content)
     
-    # Apply configuration
-    case System.cmd("make", ["olddefconfig"], cd: kernel_dir) do
-      {_, 0} -> :ok
-      {output, _} -> {:error, "Kernel config failed: #{output}"}
+    with :ok <- File.write(config_path, config_content) do
+      # Apply configuration
+      case System.cmd("make", ["olddefconfig"], cd: kernel_dir) do
+        {_, 0} -> :ok
+        {output, _} -> {:error, "Kernel config failed: #{output}"}
+      end
+    else
+      {:error, reason} -> {:error, "Failed to write kernel config: #{inspect(reason)}"}
     end
   end
 
@@ -114,14 +117,16 @@ defmodule ElixirLeanLab.Builder.Custom do
 
   defp build_minimal_initramfs(build_dir, app_dir, config) do
     initramfs_dir = Path.join(build_dir, "initramfs")
-    File.mkdir_p!(initramfs_dir)
+    
+    with :ok <- File.mkdir_p(initramfs_dir) do
     
     with :ok <- build_busybox(build_dir, initramfs_dir),
          :ok <- install_erlang_runtime(build_dir, initramfs_dir, config),
          :ok <- install_elixir_app(app_dir, initramfs_dir, config),
          :ok <- create_init_script(initramfs_dir, config),
          {:ok, cpio_path} <- create_initramfs_cpio(initramfs_dir, build_dir) do
-      {:ok, cpio_path}
+        {:ok, cpio_path}
+      end
     end
   end
 
@@ -135,20 +140,23 @@ defmodule ElixirLeanLab.Builder.Custom do
       {_, 0} ->
         # Enable static linking
         config_path = Path.join(busybox_dir, ".config")
-        config_content = File.read!(config_path)
-        modified_config = String.replace(config_content, "# CONFIG_STATIC is not set", "CONFIG_STATIC=y")
-        File.write!(config_path, modified_config)
+        with {:ok, config_content} <- File.read(config_path),
+             modified_config = String.replace(config_content, "# CONFIG_STATIC is not set", "CONFIG_STATIC=y"),
+             :ok <- File.write(config_path, modified_config) do
         
-        # Build BusyBox
-        case System.cmd("make", ["-j#{System.schedulers()}"], cd: busybox_dir) do
-          {_, 0} ->
+          # Build BusyBox
+          case System.cmd("make", ["-j#{System.schedulers()}"], cd: busybox_dir) do
+            {_, 0} ->
             # Install to initramfs
             case System.cmd("make", ["CONFIG_PREFIX=#{initramfs_dir}", "install"], cd: busybox_dir) do
-              {_, 0} -> :ok
-              {output, _} -> {:error, "BusyBox install failed: #{output}"}
-            end
-          {output, _} ->
-            {:error, "BusyBox build failed: #{output}"}
+                {_, 0} -> :ok
+                {output, _} -> {:error, "BusyBox install failed: #{output}"}
+              end
+            {output, _} ->
+              {:error, "BusyBox build failed: #{output}"}
+          end
+        else
+          {:error, reason} -> {:error, "BusyBox config failed: #{inspect(reason)}"}
         end
       {output, _} ->
         {:error, "BusyBox config failed: #{output}"}
@@ -189,12 +197,15 @@ defmodule ElixirLeanLab.Builder.Custom do
     echo "Erlang runtime installed"
     """
     
-    File.write!(erlang_script, script_content)
-    File.chmod!(erlang_script, 0o755)
+    with :ok <- File.write(erlang_script, script_content),
+         :ok <- File.chmod(erlang_script, 0o755) do
     
-    case System.cmd("bash", [erlang_script], cd: build_dir) do
-      {_, 0} -> :ok
-      {output, _} -> {:error, "Erlang extraction failed: #{output}"}
+      case System.cmd("bash", [erlang_script], cd: build_dir) do
+        {_, 0} -> :ok
+        {output, _} -> {:error, "Erlang extraction failed: #{output}"}
+      end
+    else
+      {:error, reason} -> {:error, "Failed to create Erlang script: #{inspect(reason)}"}
     end
   end
 
@@ -220,18 +231,26 @@ defmodule ElixirLeanLab.Builder.Custom do
 
   defp create_minimal_elixir_setup(initramfs_dir) do
     # Create a basic Elixir wrapper script
-    elixir_script = Path.join(initramfs_dir, "bin/elixir")
+    bin_dir = Path.join(initramfs_dir, "bin")
     
-    script_content = """
-    #!/bin/sh
-    export ERL_LIBS="/usr/lib/erlang/lib"
-    exec erl -noshell -s elixir start_cli -extra "$@"
-    """
-    
-    File.write!(elixir_script, script_content)
-    File.chmod!(elixir_script, 0o755)
-    
-    :ok
+    with :ok <- File.mkdir_p(bin_dir) do
+      elixir_script = Path.join(bin_dir, "elixir")
+      
+      script_content = """
+      #!/bin/sh
+      export ERL_LIBS="/usr/lib/erlang/lib"
+      exec erl -noshell -s elixir start_cli -extra "$@"
+      """
+      
+      with :ok <- File.write(elixir_script, script_content),
+           :ok <- File.chmod(elixir_script, 0o755) do
+        :ok
+      else
+        {:error, reason} -> {:error, "Failed to create elixir script: #{inspect(reason)}"}
+      end
+    else
+      {:error, reason} -> {:error, "Failed to create bin directory: #{inspect(reason)}"}
+    end
   end
 
   defp create_init_script(initramfs_dir, config) do
@@ -264,10 +283,12 @@ defmodule ElixirLeanLab.Builder.Custom do
     end}
     """
     
-    File.write!(init_script, script_content)
-    File.chmod!(init_script, 0o755)
-    
-    :ok
+    with :ok <- File.write(init_script, script_content),
+         :ok <- File.chmod(init_script, 0o755) do
+      :ok
+    else
+      {:error, reason} -> {:error, "Failed to create init script: #{inspect(reason)}"}
+    end
   end
 
   defp create_initramfs_cpio(initramfs_dir, build_dir) do
@@ -285,8 +306,10 @@ defmodule ElixirLeanLab.Builder.Custom do
             compressed_path = cpio_path <> ".xz"
             case System.cmd("xz", ["-9", "-c", cpio_path]) do
               {compressed_data, 0} ->
-                File.write!(compressed_path, compressed_data)
-                {:ok, compressed_path}
+                case File.write(compressed_path, compressed_data) do
+                  :ok -> {:ok, compressed_path}
+                  {:error, reason} -> {:error, "Failed to write compressed file: #{inspect(reason)}"}
+                end
               {output, _} ->
                 {:error, "CPIO compression failed: #{output}"}
             end
@@ -302,7 +325,11 @@ defmodule ElixirLeanLab.Builder.Custom do
 
   defp package_custom_vm(kernel_path, initramfs_path, config) do
     vm_name = "custom-vm.tar.xz"
-    Common.package_vm([kernel_path, initramfs_path], vm_name, config.output_dir, :xz)
+    vm_path = Path.join(config.output_dir, vm_name)
+    
+    Common.package_vm([kernel_path, initramfs_path], vm_path,
+                      compression: :xz,
+                      base_dir: Path.dirname(kernel_path))
   end
 
   @doc """
@@ -316,12 +343,12 @@ defmodule ElixirLeanLab.Builder.Custom do
   Estimate final VM size based on configuration.
   """
   def estimate_size(config) do
-    components = [
-      kernel: 2,
-      busybox: 1,
-      erlang: if(config.strip_modules, do: 8, else: 15),
-      app: if(config.app_path, do: 3, else: 0)
-    ]
-    Common.estimate_size_string(components)
+    kernel_size = 2  # ~2MB kernel
+    busybox_size = 1  # ~1MB static BusyBox
+    erlang_size = if config.strip_modules, do: 8, else: 15  # 8-15MB BEAM
+    app_size = if config.app_path, do: 3, else: 0  # ~3MB app
+    
+    total = kernel_size + busybox_size + erlang_size + app_size
+    "#{total}-#{total + 5}MB"
   end
 end

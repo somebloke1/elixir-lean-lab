@@ -63,7 +63,7 @@ defmodule ElixirLeanLab.Builder.Nerves do
   end
 
   defp create_minimal_nerves_app(app_dir, config) do
-    File.mkdir_p!(app_dir)
+    with :ok <- File.mkdir_p(app_dir) do
     
     # Create mix.exs
     mix_exs_content = """
@@ -126,11 +126,10 @@ defmodule ElixirLeanLab.Builder.Nerves do
     end
     """
     
-    File.write!(Path.join(app_dir, "mix.exs"), mix_exs_content)
-    
-    # Create application file
-    lib_dir = Path.join(app_dir, "lib")
-    File.mkdir_p!(lib_dir)
+    with :ok <- File.write(Path.join(app_dir, "mix.exs"), mix_exs_content),
+         # Create application file
+         lib_dir = Path.join(app_dir, "lib"),
+         :ok <- File.mkdir_p(lib_dir) do
     
     app_content = """
     defmodule NervesMinimalVm.Application do
@@ -155,11 +154,10 @@ defmodule ElixirLeanLab.Builder.Nerves do
     end
     """
     
-    File.write!(Path.join(lib_dir, "nerves_minimal_vm.ex"), app_content)
-    
-    # Create config files
-    config_dir = Path.join(app_dir, "config")
-    File.mkdir_p!(config_dir)
+      with :ok <- File.write(Path.join(lib_dir, "nerves_minimal_vm.ex"), app_content),
+           # Create config files
+           config_dir = Path.join(app_dir, "config"),
+           :ok <- File.mkdir_p(config_dir) do
     
     config_content = """
     import Config
@@ -184,7 +182,21 @@ defmodule ElixirLeanLab.Builder.Nerves do
     end
     """
     
-    File.write!(Path.join(config_dir, "config.exs"), config_content)
+        with :ok <- File.write(Path.join(config_dir, "config.exs"), config_content) do
+    
+    # Read SSH key safely
+    ssh_key_path = Path.join(System.user_home!(), ".ssh/id_rsa.pub")
+    ssh_key_config = case File.read(ssh_key_path) do
+      {:ok, content} ->
+        """
+        config :nerves_ssh,
+          authorized_keys: [
+            "#{String.trim(content)}"
+          ]
+        """
+      {:error, _} ->
+        "# SSH key not found at #{ssh_key_path}, SSH access will be disabled"
+    end
     
     target_config = """
     import Config
@@ -202,15 +214,16 @@ defmodule ElixirLeanLab.Builder.Nerves do
       ]
 
     # Configure ssh access
-    config :nerves_ssh,
-      authorized_keys: [
-        File.read!(Path.join(System.user_home!(), ".ssh/id_rsa.pub"))
-      ]
+    #{ssh_key_config}
     """
     
-    File.write!(Path.join(config_dir, "target.exs"), target_config)
-    
-    {:ok, app_dir}
+          case File.write(Path.join(config_dir, "target.exs"), target_config) do
+            :ok -> {:ok, app_dir}
+            {:error, reason} -> {:error, "Failed to write target.exs: #{inspect(reason)}"}
+          end
+        end
+      end
+    end
   end
 
   defp add_nerves_config(app_dir, _config) do
@@ -236,7 +249,10 @@ defmodule ElixirLeanLab.Builder.Nerves do
       """
       
       modified_content = content <> nerves_deps
-      File.write!(mix_exs_path, modified_content)
+      case File.write(mix_exs_path, modified_content) do
+        :ok -> :ok
+        {:error, reason} -> {:error, "Failed to update mix.exs: #{inspect(reason)}"}
+      end
     end
   end
 
@@ -290,10 +306,13 @@ defmodule ElixirLeanLab.Builder.Nerves do
     vm_name = "nerves-vm.fw"
     vm_path = Path.join(config.output_dir, vm_name)
     
-    # Copy firmware to output directory
-    case File.cp(firmware_path, vm_path) do
-      :ok -> {:ok, vm_path}
-      {:error, reason} -> {:error, "Failed to copy firmware: #{inspect(reason)}"}
+    # Ensure output directory exists
+    with :ok <- File.mkdir_p(config.output_dir),
+         # Copy firmware to output directory
+         :ok <- File.cp(firmware_path, vm_path) do
+      {:ok, vm_path}
+    else
+      {:error, reason} -> {:error, "Failed to package firmware: #{inspect(reason)}"}
     end
   end
 
