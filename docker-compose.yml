@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: elixir-lean-lab:latest
+    ports:
+      - "4000:4000"
+    environment:
+      - MIX_ENV=prod
+      - RELEASE_NODE=elixir_lean_lab@127.0.0.1
+      - RELEASE_COOKIE=secret_cookie_base_change_me_in_production
+    volumes:
+      - ./priv:/app/priv:ro
+    restart: unless-stopped

@@ -1,0 +1,42 @@
+{
+  "mcpServers": {
+    "mcp-memento": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@gannonh/memento-mcp"
+      ],
+      "env": {
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USER": "neo4j",
+        "NEO4J_PASSWORD": "Fjdksl!2#4",
+        "NEO4J_DATABASE": "neo4j"
+      }
+    },
+    "mcp-github": {
+      "type": "stdio",
+      "command": "/home/dgk/projects/.claude/scripts/github-dynamic-auth.sh",
+      "args": [],
+      "env": {
+        "GH_USER": "somebloke1"
+      }
+    },
+    "mcp-conport": {
+      "type": "stdio",
+      "command": "/home/dgk/.venv/conport/bin/python",
+      "args": [
+        "-m",
+        "context_portal_mcp.main",
+        "--mode",
+        "stdio",
+        "--workspace_id",
+        "${workspaceFolder}",
+        "--log-file",
+        "./logs/conport.log",
+        "--log-level",
+        "INFO"
+      ]
+    }
+  }
+}
