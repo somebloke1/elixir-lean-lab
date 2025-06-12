@@ -6,81 +6,244 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-echo "🚀 Setting up Elixir Lean Lab development environment..."
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Check for required tools
+echo -e "${BLUE}🚀 Setting up Elixir Lean Lab development environment...${NC}"
+echo ""
+
+# Function to check if a command exists
 check_command() {
-    if ! command -v "$1" &> /dev/null; then
-        echo "❌ Error: $1 is not installed."
-        echo "   Please install $1 before running this script."
-        return 1
+    if command -v "$1" &> /dev/null; then
+        echo -e "${GREEN}✅ $1 is installed${NC}"
+        return 0
     else
-        echo "✅ $1 is installed"
+        echo -e "${RED}❌ $1 is not installed${NC}"
+        return 1
     fi
 }
 
+# Function to install asdf
+install_asdf() {
+    echo -e "${YELLOW}📦 Installing asdf version manager...${NC}"
+    
+    # Clone asdf
+    git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
+    
+    # Add to shell profile
+    echo -e "${YELLOW}Adding asdf to shell configuration...${NC}"
+    
+    # For bash
+    if [ -f ~/.bashrc ]; then
+        echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
+        echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+    fi
+    
+    # For zsh
+    if [ -f ~/.zshrc ]; then
+        echo '. "$HOME/.asdf/asdf.sh"' >> ~/.zshrc
+        echo 'fpath=(${ASDF_DIR}/completions $fpath)' >> ~/.zshrc
+        echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+    fi
+    
+    # Source asdf for current session
+    export ASDF_DIR="$HOME/.asdf"
+    . "$HOME/.asdf/asdf.sh"
+    
+    echo -e "${GREEN}✅ asdf installed successfully${NC}"
+    echo -e "${YELLOW}   Please restart your shell or run: source ~/.bashrc (or ~/.zshrc)${NC}"
+}
+
+# Check for asdf
+echo -e "${BLUE}Checking for version management tools...${NC}"
+if ! check_command "asdf"; then
+    echo -e "${YELLOW}asdf is not installed. Would you like to install it? (recommended) [y/N]${NC}"
+    read -r response
+    if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        install_asdf
+    else
+        echo -e "${YELLOW}⚠️  Skipping asdf installation. You'll need to install Elixir/Erlang manually.${NC}"
+    fi
+fi
+
+# If asdf is available, set up Erlang and Elixir
+if command -v asdf &> /dev/null; then
+    echo ""
+    echo -e "${BLUE}Setting up Erlang and Elixir with asdf...${NC}"
+    
+    # Add plugins if not already added
+    if ! asdf plugin list | grep -q erlang; then
+        echo -e "${YELLOW}Adding Erlang plugin...${NC}"
+        asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
+    fi
+    
+    if ! asdf plugin list | grep -q elixir; then
+        echo -e "${YELLOW}Adding Elixir plugin...${NC}"
+        asdf plugin add elixir https://github.com/asdf-vm/asdf-elixir.git
+    fi
+    
+    # Check for .tool-versions file
+    if [ -f "$PROJECT_ROOT/.tool-versions" ]; then
+        echo -e "${BLUE}Found .tool-versions file. Installing specified versions...${NC}"
+        cd "$PROJECT_ROOT"
+        asdf install
+    else
+        # Create .tool-versions with recommended versions
+        echo -e "${YELLOW}Creating .tool-versions file with recommended versions...${NC}"
+        cat > "$PROJECT_ROOT/.tool-versions" << EOF
+erlang 26.2.1
+elixir 1.15.7-otp-26
+EOF
+        cd "$PROJECT_ROOT"
+        
+        # Install Erlang dependencies first (for Ubuntu/Debian)
+        if command -v apt-get &> /dev/null; then
+            echo -e "${YELLOW}Installing Erlang build dependencies (may require sudo)...${NC}"
+            sudo apt-get update
+            sudo apt-get install -y build-essential autoconf m4 libncurses5-dev \
+                libwxgtk3.0-gtk3-dev libwxgtk-webview3.0-gtk3-dev libgl1-mesa-dev \
+                libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop \
+                libxml2-utils libncurses-dev openjdk-11-jdk
+        elif command -v brew &> /dev/null; then
+            echo -e "${YELLOW}Installing Erlang build dependencies...${NC}"
+            brew install autoconf openssl wxwidgets libxslt fop
+        fi
+        
+        echo -e "${YELLOW}Installing Erlang 26.2.1 (this may take several minutes)...${NC}"
+        asdf install erlang 26.2.1
+        
+        echo -e "${YELLOW}Installing Elixir 1.15.7-otp-26...${NC}"
+        asdf install elixir 1.15.7-otp-26
+        
+        # Set as local versions
+        asdf local erlang 26.2.1
+        asdf local elixir 1.15.7-otp-26
+    fi
+    
+    echo -e "${GREEN}✅ Erlang and Elixir configured with asdf${NC}"
+fi
+
+# Check for Elixir and Mix
 echo ""
-echo "Checking prerequisites..."
-check_command "elixir" || exit 1
-check_command "mix" || exit 1
+echo -e "${BLUE}Checking for Elixir installation...${NC}"
+if ! check_command "elixir"; then
+    echo -e "${RED}❌ Elixir is not installed or not in PATH${NC}"
+    echo ""
+    echo -e "${YELLOW}Installation options:${NC}"
+    echo "1. Use asdf (recommended) - restart this script after installing asdf"
+    echo "2. Manual installation:"
+    echo "   - macOS: brew install elixir"
+    echo "   - Ubuntu/Debian: apt-get install elixir"
+    echo "   - Or visit: https://elixir-lang.org/install.html"
+    exit 1
+fi
+
+if ! check_command "mix"; then
+    echo -e "${RED}❌ Mix is not available (should come with Elixir)${NC}"
+    exit 1
+fi
 
 # Display versions
 echo ""
-echo "Environment versions:"
-elixir --version | head -n 1
-echo "Mix version: $(mix --version)"
+echo -e "${BLUE}Environment versions:${NC}"
+echo -e "${GREEN}$(elixir --version | head -n 1)${NC}"
+echo -e "${GREEN}Mix version: $(mix --version)${NC}"
 
 # Install dependencies
 echo ""
-echo "Installing dependencies..."
+echo -e "${BLUE}Installing project dependencies...${NC}"
 cd "$PROJECT_ROOT"
+
+# Ensure Hex is installed
+echo -e "${YELLOW}Ensuring Hex package manager is installed...${NC}"
+mix local.hex --force
+
+# Ensure rebar is installed (needed for some Erlang dependencies)
+echo -e "${YELLOW}Ensuring rebar is installed...${NC}"
+mix local.rebar --force
+
+# Get dependencies
+echo -e "${YELLOW}Fetching project dependencies...${NC}"
 mix deps.get
 
 # Compile project
 echo ""
-echo "Compiling project..."
+echo -e "${BLUE}Compiling project...${NC}"
 mix compile
-
-# Setup database for ConPort if needed
-if [ -d "context_portal" ]; then
-    echo ""
-    echo "Setting up ConPort database..."
-    chmod 755 context_portal/
-    if [ -f "context_portal/context.db" ]; then
-        chmod 644 context_portal/context.db
-    fi
-fi
 
 # Run tests to verify setup
 echo ""
-echo "Running tests to verify setup..."
-mix test
+echo -e "${BLUE}Running tests to verify setup...${NC}"
+if mix test; then
+    echo -e "${GREEN}✅ All tests passed!${NC}"
+else
+    echo -e "${YELLOW}⚠️  Some tests failed. Check the output above.${NC}"
+fi
 
 # Check code quality tools
 echo ""
-echo "Checking code quality tools..."
+echo -e "${BLUE}Checking code quality tools...${NC}"
 if mix help format &> /dev/null; then
-    echo "✅ mix format available"
+    echo -e "${GREEN}✅ mix format available${NC}"
 else
-    echo "⚠️  mix format not available"
+    echo -e "${YELLOW}⚠️  mix format not available${NC}"
 fi
 
 if mix help credo &> /dev/null 2>&1; then
-    echo "✅ credo available"
+    echo -e "${GREEN}✅ credo available${NC}"
 else
-    echo "⚠️  credo not available (optional: mix archive.install hex credo)"
+    echo -e "${YELLOW}⚠️  credo not available${NC}"
+    echo -e "${YELLOW}   To install: mix archive.install hex credo${NC}"
 fi
 
 if mix help dialyzer &> /dev/null 2>&1; then
-    echo "✅ dialyzer available"
+    echo -e "${GREEN}✅ dialyzer available${NC}"
 else
-    echo "⚠️  dialyzer not available (optional: add to mix.exs dependencies)"
+    echo -e "${YELLOW}⚠️  dialyzer not available${NC}"
+    echo -e "${YELLOW}   To install: add {:dialyxir, "~> 1.0", only: [:dev], runtime: false} to mix.exs${NC}"
 fi
 
+# Additional setup instructions
 echo ""
-echo "✨ Setup complete! You can now:"
-echo "   - Run 'iex -S mix' to start an interactive shell"
-echo "   - Run 'mix test' to run tests"
-echo "   - Run 'mix format' to format code"
-echo "   - Run './scripts/demo.sh' to see pipeline examples"
+echo -e "${BLUE}=== Additional Setup Instructions ===${NC}"
 echo ""
+echo -e "${YELLOW}For VS Code users:${NC}"
+echo "1. Install the ElixirLS extension for Elixir language support"
+echo "2. The project already includes .formatter.exs for consistent code formatting"
+echo ""
+echo -e "${YELLOW}For other editors:${NC}"
+echo "1. Vim/Neovim: Consider using vim-elixir and ALE or coc.nvim with elixir-ls"
+echo "2. Emacs: Use elixir-mode and optionally alchemist or lsp-mode"
+echo "3. IntelliJ: Install the Elixir plugin"
+echo ""
+echo -e "${YELLOW}Recommended development workflow:${NC}"
+echo "1. Run tests continuously: mix test.watch (requires mix_test_watch dependency)"
+echo "2. Format on save: Configure your editor to run mix format"
+echo "3. Use IEx for interactive development: iex -S mix"
+echo "4. Run the demo: ./scripts/demo.sh"
+echo ""
+echo -e "${GREEN}✨ Setup complete!${NC}"
+echo ""
+echo -e "${BLUE}Quick start commands:${NC}"
+echo "   ${GREEN}iex -S mix${NC}        - Start interactive Elixir shell with project loaded"
+echo "   ${GREEN}mix test${NC}          - Run all tests"
+echo "   ${GREEN}mix format${NC}        - Format all code files"
+echo "   ${GREEN}mix docs${NC}          - Generate documentation (if ex_doc is installed)"
+echo "   ${GREEN}./scripts/demo.sh${NC} - Run pipeline demonstrations"
+echo "   ${GREEN}./scripts/ci.sh${NC}   - Run full CI suite locally"
+echo ""
+
+# Final check for common issues
+if [ ! -f "$PROJECT_ROOT/.tool-versions" ]; then
+    echo -e "${YELLOW}Note: No .tool-versions file found. The setup script created one with:${NC}"
+    echo "   Erlang: 26.2.1"
+    echo "   Elixir: 1.15.7-otp-26"
+fi
+
+if [ -n "$GITHUB_ACTIONS" ]; then
+    echo -e "${BLUE}Running in GitHub Actions environment${NC}"
+fi
