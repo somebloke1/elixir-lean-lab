@@ -9,7 +9,7 @@ defmodule ElixirLeanLab.Builder.Alpine do
   4. Using musl libc for smaller binaries
   """
 
-  alias ElixirLeanLab.{Builder, Config}
+  alias ElixirLeanLab.{Builder, Config, OTPStripper}
 
   @base_packages ~w(libstdc++ openssl ncurses-libs zlib)
   @build_packages ~w(git build-base nodejs npm python3)
@@ -75,7 +75,7 @@ defmodule ElixirLeanLab.Builder.Alpine do
     COPY --from=builder /usr/local/bin/iex /usr/local/bin/
     COPY --from=builder /usr/local/bin/mix /usr/local/bin/
 
-    #{if config.strip_modules, do: strip_otp_commands(), else: ""}
+    #{if config.strip_modules, do: strip_otp_commands(config), else: ""}
 
     # Copy application release if built
     #{if config.app_path, do: "COPY --from=builder /app/_build/prod/rel /app", else: ""}
@@ -113,39 +113,17 @@ defmodule ElixirLeanLab.Builder.Alpine do
     """
   end
 
-  defp strip_otp_commands do
-    """
-    # Remove unnecessary OTP applications
-    RUN cd /usr/local/lib/erlang/lib && \
-        rm -rf diameter-* \
-               eldap-* \
-               erl_docgen-* \
-               et-* \
-               ftp-* \
-               jinterface-* \
-               megaco-* \
-               odbc-* \
-               snmp-* \
-               tftp-* \
-               wx-* \
-               xmerl-* \
-               debugger-* \
-               observer-* \
-               reltool-* \
-               common_test-* \
-               eunit-* \
-               dialyzer-* \
-               edoc-* \
-               erl_interface-* \
-               parsetools-* \
-               tools-*
-
-    # Remove documentation and source files
-    RUN find /usr/local/lib/erlang -name "*.html" -delete && \
-        find /usr/local/lib/erlang -name "*.pdf" -delete && \
-        find /usr/local/lib/erlang -name "src" -type d -exec rm -rf {} + 2>/dev/null || true && \
-        find /usr/local/lib/erlang -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
-    """
+  defp strip_otp_commands(config \ %{}) do
+    # Get OTP stripping configuration from config
+    otp_opts = [
+      ssh: Map.get(config, :keep_ssh, false),
+      ssl: Map.get(config, :keep_ssl, true),  # Keep SSL by default
+      http: Map.get(config, :keep_http, false),
+      mnesia: Map.get(config, :keep_mnesia, false),
+      dev_tools: Map.get(config, :keep_dev_tools, false)
+    ]
+    
+    OTPStripper.dockerfile_commands(otp_opts)
   end
 
   defp build_docker_image(dockerfile_path, build_dir) do
