@@ -75,3 +75,21 @@
 2025-06-12 04:22:55,153 - INFO - __main__ - ConPort FastMCP server lifespan starting.
 2025-06-12 04:22:55,167 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
 2025-06-12 04:22:55,170 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
+2025-06-12 04:30:59,702 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-12 04:30:59,702 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
+2025-06-12 04:30:59,702 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab-evolutions/instance-232cc4a1. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab-evolutions/instance-232cc4a1') is the correct project workspace.
+2025-06-12 04:30:59,702 - INFO - context_portal_mcp.db.database - Copying missing alembic.ini from templates to /home/dgk/projects/my_projects/elixir-lean-lab-evolutions/instance-232cc4a1/alembic.ini
+2025-06-12 04:30:59,703 - INFO - context_portal_mcp.db.database - Copying missing alembic/ scripts from templates to /home/dgk/projects/my_projects/elixir-lean-lab-evolutions/instance-232cc4a1/alembic
+2025-06-12 04:30:59,705 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab-evolutions/instance-232cc4a1'. Database directory will be created on first actual DB use.
+2025-06-12 04:30:59,710 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-12 04:30:59,715 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-12 04:30:59,731 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2025-06-12 04:30:59,733 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
+2025-06-12 04:35:10,685 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-12 04:35:10,685 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
+2025-06-12 04:35:10,685 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab-evolutions/instance-232cc4a1. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab-evolutions/instance-232cc4a1') is the correct project workspace.
+2025-06-12 04:35:10,685 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab-evolutions/instance-232cc4a1'. Database directory will be created on first actual DB use.
+2025-06-12 04:35:10,690 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-12 04:35:10,696 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-12 04:35:10,706 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2025-06-12 04:35:10,708 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
