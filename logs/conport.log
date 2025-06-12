@@ -35,3 +35,43 @@
 2025-06-12 02:18:40,533 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
 2025-06-12 02:18:40,536 - INFO - context_portal_mcp.db.database - Alembic: Script directory <REDACTED>/projects/my_projects/elixir-lean-lab/alembic confirmed to exist by Python.
 2025-06-12 02:18:40,536 - INFO - context_portal_mcp.db.database - Running Alembic migrations for database: <REDACTED>/projects/my_projects/elixir-lean-lab/context_portal/context.db
+2025-06-12 03:54:15,680 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-12 03:54:15,680 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
+2025-06-12 03:54:15,680 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab') is the correct project workspace.
+2025-06-12 03:54:15,681 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
+2025-06-12 03:54:15,685 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-12 03:54:15,690 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-12 03:54:15,701 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2025-06-12 03:54:15,704 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
+2025-06-12 03:55:04,761 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-12 03:55:04,761 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
+2025-06-12 03:55:04,762 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab') is the correct project workspace.
+2025-06-12 03:55:04,762 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
+2025-06-12 03:55:04,766 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-12 03:55:04,771 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-12 03:55:04,784 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2025-06-12 03:55:04,790 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
+2025-06-12 04:03:12,162 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-12 04:03:12,162 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
+2025-06-12 04:03:12,162 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab') is the correct project workspace.
+2025-06-12 04:03:12,162 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
+2025-06-12 04:03:12,166 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-12 04:03:12,171 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-12 04:03:12,202 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2025-06-12 04:03:12,209 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
+2025-06-12 04:17:26,532 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-12 04:17:26,532 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
+2025-06-12 04:17:26,533 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab') is the correct project workspace.
+2025-06-12 04:17:26,533 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
+2025-06-12 04:17:26,537 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-12 04:17:26,542 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-12 04:17:26,556 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2025-06-12 04:17:26,582 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
+2025-06-12 04:22:55,130 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-12 04:22:55,130 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: ${workspaceFolder}
+2025-06-12 04:22:55,130 - WARNING - __main__ - MAIN.PY: WARNING - Workspace ID was literally '${workspaceFolder}'. This variable was not expanded by the client IDE. Falling back to current working directory as workspace_id: /home/dgk/projects/my_projects/elixir-lean-lab. Ensure CWD in MCP config ('/home/dgk/projects/my_projects/elixir-lean-lab') is the correct project workspace.
+2025-06-12 04:22:55,130 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/home/dgk/projects/my_projects/elixir-lean-lab'. Database directory will be created on first actual DB use.
+2025-06-12 04:22:55,144 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-12 04:22:55,153 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-12 04:22:55,167 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2025-06-12 04:22:55,170 - INFO - mcp.server.lowlevel.server - Processing request of type ListPromptsRequest
