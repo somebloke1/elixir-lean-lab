@@ -7,7 +7,10 @@ defmodule ElixirLeanLab.MixProject do
       version: "0.1.0",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      description: "Minimal VM builder for Elixir applications",
+      package: package(),
+      docs: docs()
     ]
   end
 
@@ -20,7 +23,30 @@ defmodule ElixirLeanLab.MixProject do
 
   defp deps do
     [
-      {:distillery, "~> 2.1", runtime: false}
+      # JSON handling
+      {:jason, "~> 1.4"},
+      
+      # Documentation
+      {:ex_doc, "~> 0.30", only: :dev, runtime: false},
+      
+      # Testing
+      {:stream_data, "~> 0.6", only: [:dev, :test]}
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/somebloke1/elixir-lean-lab"
+      }
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: ["README.md", "docs/ARCHITECTURE.md"]
     ]
   end
 end

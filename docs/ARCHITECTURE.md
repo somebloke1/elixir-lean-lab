@@ -1,279 +1,196 @@
-# Lean Pipeline Architecture
+# Elixir Lean Lab Architecture
 
 ## Overview
 
-The Lean Pipeline is a composable, stream-based data processing system that embodies Lean software development principles through Elixir's functional programming paradigm. It demonstrates how to build efficient, maintainable systems that minimize waste while maximizing value delivery.
+Elixir Lean Lab is a minimal VM builder for Elixir applications. It creates optimized, minimal Linux-based virtual machines specifically tailored for running Elixir/Erlang applications with the smallest possible footprint.
 
-## Core Principles
+## Goals
 
-### 1. Eliminate Waste (Muda)
-- **Lazy Evaluation**: Process data only when demanded downstream
-- **Resource Efficiency**: Minimal memory footprint through streaming
-- **No Overproduction**: Backpressure prevents processing unused data
+1. **Minimal Size**: Achieve VM images under 30MB (target: 20MB)
+2. **Fast Boot**: Optimize for quick startup times
+3. **Production Ready**: Include only necessary components for production Elixir apps
+4. **Multiple Strategies**: Support different build approaches (Alpine, Buildroot, Nerves, Custom)
 
-### 2. Build Quality In
-- **Type Specifications**: Comprehensive @spec annotations
-- **Property-Based Testing**: Invariants verified with StreamData
-- **Pattern Matching**: Explicit handling of all cases
+## Architecture Components
 
-### 3. Create Knowledge
-- **Telemetry Integration**: Comprehensive metrics and tracing
-- **Self-Documenting Code**: Clear module and function names
-- **Learning from Errors**: Structured error collection and analysis
+### 1. Configuration System (`ElixirLeanLab.Config`)
 
-### 4. Defer Commitment
-- **Pluggable Stages**: Runtime-configurable pipeline components
-- **Dynamic Routing**: Data-driven flow decisions
-- **Late Binding**: Configuration evaluated at runtime
+Manages build configuration with sensible defaults:
+- VM type selection (Alpine, Buildroot, Nerves, Custom)
+- Target size constraints
+- Package selection
+- Kernel configuration options
+- VM runtime parameters
 
-### 5. Deliver Fast
-- **Concurrent Processing**: Leverage BEAM's lightweight processes
-- **Stream Processing**: Immediate processing without batching
-- **Hot Code Reloading**: Zero-downtime updates
+### 2. Builder System (`ElixirLeanLab.Builder`)
 
-### 6. Respect People
-- **Clear APIs**: Intuitive function signatures
-- **Helpful Errors**: Context-rich error messages
-- **Consistent Patterns**: Predictable behavior across modules
-
-### 7. Optimize the Whole
-- **OTP Integration**: Supervision trees for fault tolerance
-- **System Thinking**: End-to-end flow optimization
-- **Holistic Metrics**: System-level performance tracking
-
-## Architecture Layers
+Modular builder architecture with strategy pattern:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Application Layer                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐   │
-│  │   Examples  │  │   Scripts   │  │  Configuration   │   │
-│  └─────────────┘  └─────────────┘  └──────────────────┘   │
-├─────────────────────────────────────────────────────────────┤
-│                       Pipeline Layer                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐   │
-│  │   Builder   │  │   Runner    │  │   Supervisor     │   │
-│  └─────────────┘  └─────────────┘  └──────────────────┘   │
-├─────────────────────────────────────────────────────────────┤
-│                        Stage Layer                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐   │
-│  │  Transform  │  │   Filter    │  │    Aggregate     │   │
-│  └─────────────┘  └─────────────┘  └──────────────────┘   │
-├─────────────────────────────────────────────────────────────┤
-│                      Foundation Layer                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐   │
-│  │    Flow     │  │   Metrics   │  │   Error Handler  │   │
-│  └─────────────┘  └─────────────┘  └──────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+ElixirLeanLab.Builder (coordinator)
+├── ElixirLeanLab.Builder.Alpine (Docker multi-stage)
+├── ElixirLeanLab.Builder.Buildroot (embedded Linux)
+├── ElixirLeanLab.Builder.Nerves (Elixir-specific embedded)
+└── ElixirLeanLab.Builder.Custom (direct kernel/initramfs)
 ```
 
-## Core Modules
+### 3. VM Management (`ElixirLeanLab.VM`)
 
-### 1. LeanPipeline (Main API)
-```elixir
-defmodule LeanPipeline do
-  @moduledoc """
-  Main entry point for building and running Lean pipelines.
-  Provides a declarative API for pipeline construction.
-  """
-  
-  @type pipeline :: %__MODULE__{
-    stages: [stage()],
-    config: map(),
-    metrics: module()
-  }
-  
-  @type stage :: {module(), keyword()}
-end
-```
+Handles VM lifecycle:
+- Launch VMs using QEMU or Docker
+- Analyze image contents and sizes
+- Performance benchmarking
 
-### 2. LeanPipeline.Stage (Behavior)
-```elixir
-defmodule LeanPipeline.Stage do
-  @moduledoc """
-  Defines the behavior for pipeline stages.
-  Each stage must implement process/2 and optionally init/1.
-  """
-  
-  @callback init(keyword()) :: {:ok, state} | {:error, reason}
-  @callback process(Stream.t(), state) :: Stream.t()
-  @callback describe() :: String.t()
-end
-```
+## Build Strategies
 
-### 3. LeanPipeline.Flow (Stream Management)
-```elixir
-defmodule LeanPipeline.Flow do
-  @moduledoc """
-  Manages data flow through the pipeline with backpressure
-  and demand-driven processing.
-  """
-  
-  @spec create(Enumerable.t(), keyword()) :: Stream.t()
-  @spec with_backpressure(Stream.t(), pos_integer()) :: Stream.t()
-  @spec parallel(Stream.t(), pos_integer()) :: Stream.t()
-end
-```
+### Alpine Linux Strategy (Primary Implementation)
 
-### 4. LeanPipeline.Metrics (Observability)
-```elixir
-defmodule LeanPipeline.Metrics do
-  @moduledoc """
-  Telemetry-based metrics collection for pipeline monitoring.
-  Tracks throughput, latency, errors, and resource usage.
-  """
-  
-  @spec setup() :: :ok
-  @spec record_event(atom(), map(), map()) :: :ok
-end
-```
+Uses Docker multi-stage builds to create minimal Alpine-based VMs:
 
-### 5. LeanPipeline.Supervisor (Fault Tolerance)
-```elixir
-defmodule LeanPipeline.Supervisor do
-  @moduledoc """
-  OTP supervisor for pipeline processes.
-  Implements restart strategies aligned with Lean principles.
-  """
-  
-  use Supervisor
-  
-  @spec start_pipeline(pipeline()) :: {:ok, pid()} | {:error, reason}
-end
-```
+1. **Stage 1 - Builder**:
+   - Full Elixir/Erlang development environment
+   - Compiles application and dependencies
+   - Creates OTP release
 
-## Stage Types
+2. **Stage 2 - Runtime**:
+   - Minimal Alpine base (5MB)
+   - Only runtime dependencies
+   - Stripped OTP libraries
+   - Non-root user
 
-### Transform Stages
-- **Map**: Element-wise transformation
-- **FlatMap**: One-to-many transformation
-- **Scan**: Stateful accumulation
+3. **Stage 3 - Export**:
+   - Scratch-based final image
+   - Minimal attack surface
 
-### Filter Stages
-- **Filter**: Predicate-based filtering
-- **Take**: Limit element count
-- **Drop**: Skip elements
-- **Deduplicate**: Remove duplicates
+**Size Optimization Techniques**:
+- Remove unnecessary OTP applications (wx, debugger, etc.)
+- Strip debug symbols
+- Remove documentation and source files
+- Use musl libc instead of glibc
+- Compress with XZ (highest compression)
 
-### Aggregation Stages
-- **Reduce**: Fold over stream
-- **Window**: Time/count-based windows
-- **GroupBy**: Key-based grouping
+### Buildroot Strategy (Planned)
 
-### IO Stages
-- **Source**: Data ingestion
-- **Sink**: Data output
-- **Tap**: Side-effect observation
+For ultimate control over the Linux system:
+- Custom kernel configuration (tinyconfig baseline)
+- Minimal root filesystem with BusyBox
+- Direct hardware support
+- Target: Sub-20MB images
 
-## Configuration
+### Nerves Strategy (Planned)
+
+Leverages existing Nerves infrastructure:
+- Pre-optimized for embedded Elixir
+- Hardware-specific targets
+- Built-in firmware management
+- Target: 18-25MB images
+
+### Custom Strategy (Planned)
+
+Direct kernel and initramfs manipulation:
+- Compile custom Linux kernel
+- Create minimal initramfs with BEAM
+- No package manager overhead
+- Target: Sub-15MB images
+
+## Key Design Decisions
+
+### 1. Modular Builder Pattern
+
+Each build strategy is isolated in its own module, allowing:
+- Independent implementation and testing
+- Easy addition of new strategies
+- Strategy-specific optimizations
+
+### 2. Docker as Primary Build Tool
+
+For Alpine strategy:
+- Reproducible builds
+- No host system contamination
+- Easy CI/CD integration
+- Multi-stage optimization
+
+### 3. QEMU for VM Testing
+
+Provides:
+- Hardware virtualization
+- Network isolation
+- Resource constraints
+- Cross-platform support
+
+### 4. Incremental Optimization
+
+Start with Alpine (easiest, 20-30MB) and progressively implement more complex strategies for smaller sizes.
+
+## Usage Examples
+
+### Building a Minimal VM
 
 ```elixir
-# config/config.exs
-config :lean_pipeline,
-  default_timeout: 5_000,
-  max_buffer_size: 1_000,
-  telemetry_prefix: [:lean_pipeline],
-  error_handler: LeanPipeline.ErrorHandler
+# Build Alpine-based VM with default settings
+{:ok, artifacts} = ElixirLeanLab.build(
+  type: :alpine,
+  target_size: 25,
+  app: "./my_app"
+)
 
-# Runtime configuration
-pipeline_config = %{
-  stages: [
-    {LeanPipeline.Stages.Map, transform: &String.upcase/1},
-    {LeanPipeline.Stages.Filter, predicate: &(String.length(&1) > 3)},
-    {LeanPipeline.Stages.Window, size: 100, trigger: :count}
-  ],
-  flow: %{
-    max_demand: 100,
-    parallelism: System.schedulers_online()
-  }
-}
+# Analyze the built image
+ElixirLeanLab.analyze(artifacts.image)
 ```
 
-## Error Handling
+### Custom Configuration
 
 ```elixir
-defmodule LeanPipeline.ErrorHandler do
-  @moduledoc """
-  Implements circuit breaker pattern and error recovery.
-  Follows "fail fast, recover gracefully" principle.
-  """
-  
-  @type error_strategy :: :skip | :retry | :halt | :default
-  
-  @spec handle_error(any(), map()) :: error_strategy()
-end
+config = ElixirLeanLab.configure(
+  type: :alpine,
+  target_size: 20,
+  packages: ["curl"],  # Additional Alpine packages
+  strip_modules: true,
+  compression: :xz,
+  vm_options: %{memory: 128, cpus: 1}
+)
+
+{:ok, artifacts} = ElixirLeanLab.Builder.build(config)
 ```
 
-## Metrics and Monitoring
-
-### Key Metrics
-1. **Throughput**: Elements processed per second
-2. **Latency**: Time per element (p50, p95, p99)
-3. **Error Rate**: Failures per time window
-4. **Buffer Usage**: Memory and queue depths
-5. **CPU Usage**: Per-stage processor utilization
-
-### Telemetry Events
-```elixir
-[:lean_pipeline, :stage, :start]
-[:lean_pipeline, :stage, :stop]
-[:lean_pipeline, :stage, :error]
-[:lean_pipeline, :flow, :backpressure]
-[:lean_pipeline, :pipeline, :complete]
-```
-
-## Example Usage
+### Launching for Testing
 
 ```elixir
-# Define a pipeline for processing log files
-pipeline = LeanPipeline.build()
-  |> LeanPipeline.source(File.stream!("logs.txt"))
-  |> LeanPipeline.map(&parse_log_line/1)
-  |> LeanPipeline.filter(&critical?/1)
-  |> LeanPipeline.window(:tumbling, size: 1000)
-  |> LeanPipeline.aggregate(&count_by_type/1)
-  |> LeanPipeline.sink(&write_metrics/1)
-
-# Run with supervision
-{:ok, _pid} = LeanPipeline.Supervisor.start_pipeline(pipeline)
+{:ok, vm} = ElixirLeanLab.launch(artifacts.image,
+  memory: 256,
+  cpus: 2
+)
 ```
 
-## Testing Strategy
+## File Structure
 
-### 1. Property-Based Tests
-```elixir
-property "pipeline preserves element count without filters" do
-  check all elements <- list_of(term()) do
-    result = elements
-      |> LeanPipeline.from_enumerable()
-      |> LeanPipeline.map(&identity/1)
-      |> Enum.to_list()
-    
-    assert length(result) == length(elements)
-  end
-end
+```
+lib/
+├── elixir_lean_lab.ex          # Main API
+├── elixir_lean_lab/
+│   ├── config.ex               # Configuration management
+│   ├── builder.ex              # Builder coordinator
+│   ├── builder/
+│   │   ├── alpine.ex           # Alpine Linux builder
+│   │   ├── buildroot.ex        # Buildroot builder
+│   │   ├── nerves.ex           # Nerves builder
+│   │   └── custom.ex           # Custom kernel builder
+│   └── vm.ex                   # VM management
 ```
 
-### 2. Integration Tests
-- End-to-end pipeline execution
-- Error injection and recovery
-- Performance benchmarks
+## Performance Targets
 
-### 3. Documentation Tests
-- All examples in documentation are executable
-- Ensures documentation stays current
+| Strategy   | Image Size | Boot Time | RAM Usage |
+|------------|------------|-----------|-----------|
+| Alpine     | 20-30 MB   | < 2s      | 64-128 MB |
+| Buildroot  | 15-25 MB   | < 1s      | 32-64 MB  |
+| Nerves     | 18-25 MB   | < 1s      | 64-128 MB |
+| Custom     | 10-20 MB   | < 500ms   | 32-64 MB  |
 
-## Performance Considerations
+## Future Enhancements
 
-1. **Memory**: Bounded buffers prevent unbounded growth
-2. **CPU**: Work stealing for load balancing
-3. **I/O**: Non-blocking operations with Flow
-4. **Network**: Built-in backpressure for distributed pipelines
-
-## Future Extensions
-
-1. **Distributed Pipelines**: Cross-node processing
-2. **Persistence**: Checkpoint/restore capability
-3. **Visual Debugger**: Pipeline flow visualization
-4. **DSL**: Domain-specific language for pipeline definition
-5. **Adapters**: Integration with Kafka, RabbitMQ, etc.
+1. **Multi-architecture Support**: ARM64, RISC-V
+2. **Container Runtime Integration**: Podman, Firecracker
+3. **Cloud Provider Images**: AMI, GCE, Azure
+4. **Unikernel Exploration**: MirageOS-style approach
+5. **Hot Code Loading**: Preserve BEAM's hot upgrade capabilities
