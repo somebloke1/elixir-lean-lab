@@ -7,7 +7,7 @@ set -e
 # Configuration
 INSTANCES=5
 DURATION_HOURS=2
-MODEL="claude-3-5-sonnet-20241022"
+MODEL="claude-sonnet-4-20250514"  # Claude Sonnet 4
 BASE_DIR="$(pwd)"
 EVOLUTION_DIR="${BASE_DIR}/alpine-fix-evolution"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
