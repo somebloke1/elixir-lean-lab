@@ -77,7 +77,12 @@ defmodule ElixirLeanLab.Validator do
     test_cmd = "docker load < #{image_path} && docker run --rm elixir-minimal:latest elixir -e 'IO.puts(:ok)'"
     
     case System.cmd("sh", ["-c", test_cmd], stderr_to_stdout: true) do
-      {output, 0} when output =~ "ok" -> {:ok, :bootable}
+      {output, 0} ->
+        if String.contains?(output, "ok") do
+          {:ok, :bootable}
+        else
+          {:error, "Docker image did not output 'ok'"}
+        end
       {output, _} -> {:error, "Docker image not bootable: #{output}"}
     end
   end
@@ -114,7 +119,12 @@ defmodule ElixirLeanLab.Validator do
         test_cmd = "docker run --rm elixir-minimal:latest elixir -e 'IO.inspect(System.version())'"
         
         case System.cmd("sh", ["-c", test_cmd], stderr_to_stdout: true) do
-          {output, 0} when output =~ "1." -> {:ok, :functional}
+          {output, 0} ->
+            if String.contains?(output, "1.") do
+              {:ok, :functional}
+            else
+              {:error, "Elixir not functional: #{output}"}
+            end
           {output, _} -> {:error, "Elixir not functional: #{output}"}
         end
         

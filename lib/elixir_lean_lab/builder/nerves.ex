@@ -65,7 +65,7 @@ defmodule ElixirLeanLab.Builder.Nerves do
     end
   end
 
-  defp create_minimal_nerves_app(app_dir, config) do
+  defp create_minimal_nerves_app(app_dir, _config) do
     File.mkdir_p!(app_dir)
     
     # Create mix.exs
@@ -120,7 +120,7 @@ defmodule ElixirLeanLab.Builder.Nerves do
       defp release do
         [
           overwrite: true,
-          cookie: "#{@app}_cookie",
+          cookie: "\#{@app}_cookie",
           include_erts: &Nerves.Release.erts/0,
           steps: [&Nerves.Release.init/1, :assemble],
           strip_beams: Mix.env() == :prod or [keep: ["Docs"]]
@@ -144,8 +144,8 @@ defmodule ElixirLeanLab.Builder.Nerves do
         
         # Print startup message
         IO.puts("🚀 Nerves Minimal VM Started!")
-        IO.puts("Target: #{Nerves.Runtime.target()}")
-        IO.puts("Memory: #{:erlang.memory(:total) |> format_bytes()}")
+        IO.puts("Target: \#{Nerves.Runtime.target()}")
+        IO.puts("Memory: \#{:erlang.memory(:total) |> format_bytes()}")
         
         opts = [strategy: :one_for_one, name: NervesMinimalVm.Supervisor]
         Supervisor.start_link(children, opts)
@@ -153,7 +153,7 @@ defmodule ElixirLeanLab.Builder.Nerves do
       
       defp format_bytes(bytes) do
         mb = bytes / 1_048_576
-        "#{Float.round(mb, 2)} MB"
+        "\#{Float.round(mb, 2)} MB"
       end
     end
     """

@@ -6,8 +6,7 @@ defmodule ElixirLeanLab.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Start the Lean Pipeline supervisor
-      {LeanPipeline.Supervisor, []}
+      # No supervisors needed at startup
     ]
 
     opts = [strategy: :one_for_one, name: ElixirLeanLab.Supervisor]

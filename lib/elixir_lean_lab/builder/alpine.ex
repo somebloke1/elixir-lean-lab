@@ -16,7 +16,7 @@ defmodule ElixirLeanLab.Builder.Alpine do
 
   def build(%Config{} = config) do
     with {:ok, build_dir} <- Builder.prepare_build_env(config),
-         {:ok, app_dir} <- Builder.prepare_app(config.app_path, build_dir),
+         {:ok, _app_dir} <- Builder.prepare_app(config.app_path, build_dir),
          {:ok, dockerfile_path} <- create_dockerfile(config, build_dir),
          {:ok, image_name} <- build_docker_image(dockerfile_path, build_dir),
          {:ok, vm_image} <- export_vm_image(image_name, config) do
